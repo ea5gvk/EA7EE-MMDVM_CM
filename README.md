@@ -22,7 +22,7 @@ Please be patient, I will upload my code on the repository as soon as possible a
 
 This software is licensed under the GPL v2 and is intended for amateur and educational use only. Use of this software for commercial purposes is strictly forbidden.
 
-# How to full integrate YSF2DMR in Pi-Star image
+# How to fully integrate YSF2DMR in Pi-Star image
 
 Firstly, you must configure pi-star through the web UI to work with C4FM (YSFGateway) and YSF2DMR as usual. Remember that if you change anything directly in the mmdvmhost or ysf2dmr configuration files and then You change any setting on the web UI you will lost the manual file configuration changes. So I advice you only to use the PI-STAR Web UI at the very beginning.
 
