@@ -313,11 +313,11 @@ This parameter specify the time period in minutes when an update of TGList will 
 	TGReload=60
 ```
 ### ABECompA and AMBECompB
-These are AMBE Voice Compression parameters. When DMR modulation is translated to C4FM the dynamic range of DMR modulation is greater than C4FM range (to the best of my knolodge it is because Yaesu have different audio adjust levels). This imply some DMR modulations will be severity distorted when listen on C4FM Gear. 
+These are AMBE Voice Compression parameters. When DMR modulation is translated to C4FM the dynamic range of DMR modulation is greater than C4FM range (to the best of my knolodge it is because Yaesu have different audio adjust levels). This means that some DMR modulations will be severity distorted when listen on C4FM gear. 
 
-This problem shows when Cheap DMR Gear is used, the user modifies the microphone net o he/she use an external home made microphone. In adition, usualy the user shouts over the microphone and the DMR gear lacks audio compression. To avoid receiver distortion we unpack AMBE information and reduce the formant volume only for very distorted signals. We use a bi-linear table that we generate with two parameters. The formant volume has 32 levels. Parameter A set the limit level (32-CompA is maximun level). Parameter B set the start level of compression(32-CompA-CompB is start level). If any parameter is zero, the compression turns off.
+This problem shows up when cheap DMR gear is used, the user modifies the microphone net o he/she use an external home made microphone. In adition, usualy the user screams over the microphone and the situation gets worse because usually DMR gear lacks audio compression. To avoid receiver distortion we unpack AMBE information and reduce the formant volume only for very distorted signals. We use a bi-linear table that we generate with two parameters. The formant volume has 32 levels. Parameter A set the limit level (32-CompA is maximun level). Parameter B set the start level of compression(32-CompA-CompB is start level). If any parameter is zero, the compression turns off.
 
-The result is data loss, we get other type of distortion more pleasant for the human ear. Exact waveform recovery is not possible because the voice formants levels are modified. 
+We get other type of distortion that I found more pleasant for the human ear. Exact waveform recovery is not possible because the voice formants levels are modified and data is lost. 
 
 It is important to note that this compression artifacts only takes place on overmodulated signals and it is more pleasant to the ear that listen at distorted signals. Example:
 ```
