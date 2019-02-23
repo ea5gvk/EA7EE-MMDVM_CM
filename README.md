@@ -296,27 +296,27 @@ This is the time in minutes that the program wait to ask again for a callsign lo
 
 ## [Storage]
 This section includes the new options for the new functionality of the program
-## TimeoutTime
+### TimeoutTime
 This is the time in minutes that will last the TG when you change it using Wires-X commands. If you change TG using Wires-X keys with the Yaesu transceiver and then you don't transmit anything for this time period, the system will issue a change TG command automatically to return to the original TG when time expires. If you transmit the period will be reset. If you put TimeoutTime=0, the TG will remain forever. This option is used in Public HotSpots. Example:
 ```
 	TimeoutTime=60
 ```
-## BeaconTime
+### BeaconTime
 This is the period of the Voice Beacon. The voice beacon is an uncompressed AMBE file without header. We can get an AMBE file with the SaveAMBE option below. It must reside in /usr/local/etc/beacon.amb . If the BeaconTime is zero or the file don't exist beacon will be disabled. Example:
 ```
 	BeaconTime=10
 ```
-## SaveAMBE
+### SaveAMBE
 When this parameters value is "1" it allow us to save AMBE format files for voice coming from C4FM modulation. The files will be saved to the /tmp folder, their name will be a number counting up for each voice period. So we can create many beacon files and then try them. Example:
 ```
 	SaveAMBE=0
 ```
-## TGReload
+### TGReload
 This parameter specify the time in minutes when a update of TGList will be done. This update re-reads the TGList.txt file. Example:
 ```
 	TGReload=60
 ```
-# ABECompA and AMBECompB
+### ABECompA and AMBECompB
 These are AMBE Voice Compression parameters. When DMR modulation is translated to C4FM the dynamic range of DMR modulation is greater than C4FM range. This imply many DMR modulations will be severity distorted when listen on C4FM Gear. 
 
 This problem shows when Cheap DMR Gear is used or the user modifies the microphone net o use a external home made microphone. in other cases the problem is that the user shouts over the microphone. To avoid receiver distortion we unpack AMBE information and reduce format volume. We use a bi-linear table that we generate with two parameters. The formant volume has 32 levels. Parameter A set the limit level. Parameter B set the start level of compression. If any parameter is zero, the compression turns off.
