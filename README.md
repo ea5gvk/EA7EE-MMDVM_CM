@@ -237,23 +237,23 @@ This is the time period for the update of the database. It will be in hours, so 
 
 ## [aprs.fi]
 This section configures the APRS subsystem.
-### AprsCallsign
+### AprsCallsign [*]
 This is the APRS Callsign that will be sent to the APRS-IS server. You can add a suffix directly. Example:
 ```
 	AprsCallsign=EA7RCC-3
 ```
-### HotSpotFollow
+### HotSpotFollow [*]
 This is a boolean option. With "1" the HostSpot location will be following the location of the station which have the same callsign as the HostSpot. In this way the HostSpot will be skipping near the owner station location. With "0" the HostSpot Icon will be static at the supplies coordinates. Mobile HotSpots use "1" value. Example:
 ```
 	HotSpotFollow=0
 ```
-### Icon and text
+### Icon and text [*]
 This is the icon and beacon text that will be sent to the ARPS-IS server. You can see it in the aprs.fi web page. Example:
 ```
 	Icon=YY
 	Beacon=YSF2DMR Public DMO
 ```
-### BeaconTime
+### BeaconTime [*]
 This is the time period used for send the HotSpot Location Beacon to the APRS-IS Server in minutes. Usually it is 20 minutes. Example:
 ```
 	BeaconTime=20
@@ -284,35 +284,35 @@ This is the server and port for the APRS-IS Network. Usually you should use a se
 	Server=spain2.aprs2.net
 	Port=14580
 ```
-### Refresh
+### Refresh [*]
 This is the time in minutes that the program wait to ask again for a callsign location, so we don't overload the aprs.fi server. Example:
 ```
 	Refresh=4
 ```
 
-## [Storage]
+## [Storage] [*]
 This section includes the new options for the new functionality of the program
-### TimeoutTime
+### TimeoutTime [*]
 This is the time in minutes that will last the TG when you change it using Wires-X commands. If you change TG using Wires-X keys with the Yaesu transceiver and then you don't transmit anything for this time period, the system will issue a change TG command automatically to return to the original TG when time expires. If you transmit the period will be reset. If you put TimeoutTime=0, the TG will remain forever. This TimeoutTime option is used in Public HotSpots to come back to the original TG. Example:
 ```
 	TimeoutTime=60
 ```
-### BeaconTime
+### BeaconTime [*]
 This is the time period of the Voice Beacon. The voice beacon is an uncompressed AMBE file without header. We can generate an AMBE file with the SaveAMBE option below. It must reside in /usr/local/etc/beacon.amb . If the BeaconTime is zero or the file don't exist voice beacon will be disabled. Example:
 ```
 	BeaconTime=10
 ```
-### SaveAMBE
+### SaveAMBE [*]
 When this parameters value is "1" it allow us to save AMBE format files for voice coming from C4FM modulation. The files will be saved to the /tmp folder, their name will be a number counting up for each voice period. So we can create many beacon files and then try them. Example:
 ```
 	SaveAMBE=0
 ```
-### TGReload
+### TGReload [*]
 This parameter specify the time period in minutes when an update of TGList will be done. This update re-reads the TGList.txt file. Example:
 ```
 	TGReload=60
 ```
-### ABECompA and AMBECompB
+### ABECompA and AMBECompB [*]
 These are AMBE Voice Compression parameters. When DMR modulation is translated to C4FM the dynamic range of DMR modulation is greater than C4FM range (to the best of my knolodge it is because Yaesu have different audio adjust levels). This means that some DMR modulations will be severity distorted when listen on C4FM gear. 
 
 This problem shows up when cheap DMR gear is used, the user modifies the microphone net o he/she use an external home made microphone. In adition, usualy the user screams over the microphone and the situation gets worse because usually DMR gear lacks audio compression. To avoid receiver distortion we unpack AMBE information and reduce the formant volume only for very distorted signals. We use a bi-linear table that we generate with two parameters. The formant volume has 32 levels. Parameter A set the limit level (32-CompA is maximun level). Parameter B set the start level of compression(32-CompA-CompB is start level). If any parameter is zero, the compression turns off.
