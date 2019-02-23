@@ -78,6 +78,8 @@ In my case I use the Spanish Master Server, but you can change the link to the m
 	0 0,12  * * *   root    [ -x /usr/local/bin/updateDMRIDs.sh  ] && /usr/local/bin/updateDMRIDs.sh
 	0  *    * * *   root    [ -x /usr/local/bin/updateTGList.sh ] && /usr/local/bin/updateTGList.sh
 ```
+Dont forget to put the TGList.txt file from /MMDVM_CM/YSF2DMR/crontrib folder to the /usr/local/etc folder so when you run the ysf2dmr program it get the proper version in place. You can also run the updateTGList.sh script to get the proper file in place.
+
 I advice you also to include the DMR ID update at the end of /etc/rc.local file so that each time you start your HotSpot, it can source and update the last DMR database so you haven't any problems with callsigns.
 
 # ysf2dmr configuration file explained
