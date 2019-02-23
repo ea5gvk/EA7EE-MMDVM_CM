@@ -45,16 +45,16 @@ Also, you should disable all others modes as DMR or DSTAR so they do not start u
 In my image I also disable YSFGateway and YSFParrot with:
 ```
 	sudo systemctl stop YSFGateway
-	sudo systemctl disable YSFGateway"
-	sudo systemctl stop YSFGateway.timer"
-	sudo systemctl disable YSFGatway.timer"
-	sudo systemctl stop YSFParrot"
-	sudo systemctl disable YSFParrot"
+	sudo systemctl disable YSFGateway
+	sudo systemctl stop YSFGateway.timer
+	sudo systemctl disable YSFGatway.timer
+	sudo systemctl stop YSFParrot
+	sudo systemctl disable YSFParrot
 ```
 and also I advice you to rename program files under /usr/local/bin as YSFGateway and YSFParrot to YSFGateway.old and YSFParrot.old so they don't run by accident.  
 ```
-	sudo mv /usr/local/bin/YSFGateway /usr/local/bin/YSFGateway.old"
-	sudo mv /usr/local/bin/YSFParrot /usr/local/bin/YSFParrot"
+	sudo mv /usr/local/bin/YSFGateway /usr/local/bin/YSFGateway.old
+	sudo mv /usr/local/bin/YSFParrot /usr/local/bin/YSFParrot.old
 ``` 
 Then you should restart the mmdvmhost program keying on the console:
 ``` 
