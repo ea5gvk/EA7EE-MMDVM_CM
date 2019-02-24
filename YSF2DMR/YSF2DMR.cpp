@@ -273,6 +273,7 @@ int CYSF2DMR::run()
 	unsigned int m_timeout_time = m_conf.getTimeoutTime();
 	unsigned int m_beacon_time = m_conf.getBeaconTime();
 	unsigned int reloadTime = m_conf.getDMRIdLookupTime();
+    unsigned int tglist_reload = m_conf.getTGListReload();
 
 	std::string fileName    = m_conf.getDMRXLXFile();
 	m_xlxReflectors = new CReflectors(fileName, 60U);
@@ -695,7 +696,7 @@ int CYSF2DMR::run()
 						beacon_Watch.start();
 						not_busy=0;
 						ysfWatchdog.start();
-						m_conv.putYSF(buffer + 35U);
+						m_conv.putYSF(buffer + 35U,file);
 						m_ysfFrames++;
 					}
 				}
@@ -1299,7 +1300,7 @@ void CYSF2DMR::createGPS()
 	LogMessage("    Beacon Text: %s", beacon_text.c_str());
 	LogMessage("    Follow Mode: %s", followMode ? "yes" : "no");
 
-	m_gps = new CGPS(callsign, m_suffix, password, hostname, port);
+	m_gps = new CGPS(callsign, m_callsign, m_suffix, password, hostname, port);
 
 	unsigned int txFrequency = m_conf.getTxFrequency();
 	unsigned int rxFrequency = m_conf.getRxFrequency();
@@ -1308,7 +1309,7 @@ void CYSF2DMR::createGPS()
 	int height               = m_conf.getHeight();
 	int beacon_time			 = m_conf.getAPRSBeaconTime();
 
-	m_gps->setInfo(txFrequency, rxFrequency, latitude, longitude, height, desc);
+	m_gps->setInfo(txFrequency, rxFrequency, latitude, longitude, height, desc, icon, beacon_text, beacon_time, followMode);
 
 	bool ret = m_gps->open();
 	if (!ret) {

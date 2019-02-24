@@ -33,7 +33,7 @@ const unsigned char NULL_GPS[] = {0x47U, 0x63U};
 const unsigned char SHRT_GPS[] = {0x22U, 0x62U};
 const unsigned char LONG_GPS[] = {0x47U, 0x64U};
 
-CGPS::CGPS(const std::string& callsign, const std::string& suffix, const std::string& password, const std::string& address, unsigned int port) :
+CGPS::CGPS(const std::string& callsign, const std::string& node_callsign, const std::string& suffix, const std::string& password, const std::string& address, unsigned int port) :
 m_writer(callsign, suffix, password, address, port),
 m_buffer(NULL),
 m_sent(false),
@@ -54,7 +54,7 @@ CGPS::~CGPS()
 
 void CGPS::setInfo(unsigned int txFrequency, unsigned int rxFrequency, float latitude, float longitude, int height, const std::string& desc, const std::string& icon, const std::string& beacon_text, int beacon_time, bool follow)
 {
-	m_writer.setInfo(txFrequency, rxFrequency, latitude, longitude, height, desc, icon, beacon_text, beacon_time, follow);
+	m_writer.setInfo(m_callsign, txFrequency, rxFrequency, latitude, longitude, height, desc, icon, beacon_text, beacon_time, follow);
 }
 
 bool CGPS::open()

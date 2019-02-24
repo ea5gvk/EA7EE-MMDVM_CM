@@ -29,6 +29,7 @@
 
 #include <cstdio>
 #include <cassert>
+#include <math.h>
 
 const unsigned char BIT_MASK_TABLE[] = {0x80U, 0x40U, 0x20U, 0x10U, 0x08U, 0x04U, 0x02U, 0x01U};
 
@@ -984,22 +985,20 @@ void CModeConv::LoadTable(unsigned int levelA, unsigned int levelB)
 	level_a=32-levelA;
 	level_b=32-levelA-levelB;
 
-	LogMessage("AMBE Table Values: ");
-
 	for (i=0;i<level_b;i++) m_ctable[i]=i;
 
 	pte=((float)(level_a-level_b))/(31-level_b);
 	for (i=level_b;i<32;i++) {
 		m_ctable[i]=ceil(((i-level_b)*pte)+level_b);
 	}
-	char final_str[80];
+	char final_str[120];
 	char tmp_str[20];
-	strcpy(final_str,"AMBE Compression Table: ";)
+	strcpy(final_str,"AMBE Compression Table: ");
 	for (i=0;i<31;i++) {
-		sprintf(tmp_str,"%d, ",m_ctable[i])
-		strcat(str_tmp,tmp_str);
+		sprintf(tmp_str,"%d, ",m_ctable[i]);
+		strcat(final_str,tmp_str);
 	}
-	sprintf(tmp_str,"%d.",m_ctable[31])
-	strcat(final,str,str_tmp);
+	sprintf(tmp_str,"%d.",m_ctable[31]);
+	strcat(final_str,tmp_str);
 	LogMessage(final_str);
 }

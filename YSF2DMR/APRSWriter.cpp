@@ -57,7 +57,7 @@ CAPRSWriter::~CAPRSWriter()
 {
 }
 
-void CAPRSWriter::setInfo(unsigned int txFrequency, unsigned int rxFrequency, float latitude, float longitude, int height, const std::string& desc, const std::string& icon, const std::string& beacon_text, int beacon_time, bool follow)
+void CAPRSWriter::setInfo(const std::string& node_callsign, unsigned int txFrequency, unsigned int rxFrequency, float latitude, float longitude, int height, const std::string& desc, const std::string& icon, const std::string& beacon_text, int beacon_time, bool follow)
 {
 	m_txFrequency = txFrequency;
 	m_rxFrequency = rxFrequency;

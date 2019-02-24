@@ -56,6 +56,7 @@ const unsigned char DEFAULT_FICH[] = {0x20U, 0x00U, 0x01U, 0x00U};
 const unsigned char NET_HEADER[] = "YSFD                    ALL      ";
 
 CWiresX::CWiresX(const std::string& callsign, const std::string& suffix, CYSFNetwork* network, std::string tgfile, bool makeUpper, unsigned int reloadTime) :
+CThread(),
 m_callsign(callsign),
 m_tgfile(tgfile),
 m_reloadTime(reloadTime),
@@ -100,7 +101,29 @@ m_bufferTX(10000U, "YSF Wires-X TX Buffer")
 	m_csd3   = new unsigned char[20U];
 
 	// Load file with TG List
-	FILE* fp = ::fopen(tgfile.c_str(), "rt");
+	read();
+}
+
+CWiresX::~CWiresX()
+{
+	delete[] m_csd3;
+	delete[] m_csd2;
+	delete[] m_csd1;
+	delete[] m_header;
+	delete[] m_command;
+}
+
+bool CWiresX::load()
+{
+	int count=0;
+
+	m_mutex.lock();
+
+	m_currTGList.clear();
+
+	// Load file with TG List
+	FILE* fp = ::fopen(m_tgfile.c_str(), "rt");
+
 	if (fp != NULL) {
 		char buffer[100U];
 		while (::fgets(buffer, 100U, fp) != NULL) {
@@ -110,9 +133,11 @@ m_bufferTX(10000U, "YSF Wires-X TX Buffer")
 			char* p1 = ::strtok(buffer, ";\r\n");
 			char* p2 = ::strtok(NULL, ";\r\n");
 			char* p3 = ::strtok(NULL, ";\r\n");
-			char* p4 = ::strtok(NULL, "\r\n");
+			char* p4 = ::strtok(NULL, ";\r\n");
+			char* p5 = ::strtok(NULL, "\r\n");
 
-			if (p1 != NULL && p2 != NULL && p3 != NULL && p4 != NULL ) {
+			if (p1 != NULL && p2 != NULL && p3 != NULL && p4 != NULL && p5 != NULL ) {
+				count++;
 				CTGReg* tgreg = new CTGReg;
 
 				std::string id_tmp = std::string(p1);
@@ -123,8 +148,12 @@ m_bufferTX(10000U, "YSF Wires-X TX Buffer")
 
 				tgreg->m_id = std::string(n_zero, '0') + id_tmp;
 				tgreg->m_opt = std::string(p2);
-				tgreg->m_name = std::string(p3);
-				tgreg->m_desc = std::string(p4);
+				char tmp[4];
+				int valor=atoi(p3);
+				sprintf(tmp,"%03d",valor);
+				tgreg->m_count = std::string(tmp);
+				tgreg->m_name = std::string(p4);
+				tgreg->m_desc = std::string(p5);
 
 				if (m_makeUpper) {
 					std::transform(tgreg->m_name.begin(), tgreg->m_name.end(), tgreg->m_name.begin(), ::toupper);
@@ -139,19 +168,59 @@ m_bufferTX(10000U, "YSF Wires-X TX Buffer")
 		}
 
 		::fclose(fp);
+
+		m_mutex.unlock();
+
+		LogMessage("Loaded %u TGs in the TGId lookup table",count);
 	}
 
 	m_txWatch.start();
+
+	return true;
 }
 
-CWiresX::~CWiresX()
+bool CWiresX::read()
 {
-	delete[] m_csd3;
-	delete[] m_csd2;
-	delete[] m_csd1;
-	delete[] m_header;
-	delete[] m_command;
+	bool ret = load();
+
+	if (m_reloadTime > 0U)
+		run();
+
+	return ret;
 }
+
+void CWiresX::entry()
+{
+	LogInfo("Started the TGList reload thread");
+
+	CTimer timer(1U, 60U * m_reloadTime);
+	timer.start();
+
+	while (!m_stop) {
+		sleep(1000U);
+
+		timer.clock();
+		if (timer.hasExpired()) {
+			load();
+			timer.start();
+		}
+	}
+
+	LogInfo("Stopped the TGList reload thread");
+}
+
+void CWiresX::stop()
+{
+	if (m_reloadTime == 0U) {
+		delete this;
+		return;
+	}
+
+	m_stop = true;
+
+	wait();
+}
+
 
 void CWiresX::setInfo(const std::string& name, unsigned int txFrequency, unsigned int rxFrequency, int dstID)
 {

@@ -24,6 +24,7 @@
 #include "YSFNetwork.h"
 #include "DMRNetwork.h"
 #include "Thread.h"
+#include "Mutex.h"
 #include "Timer.h"
 #include "StopWatch.h"
 #include "RingBuffer.h"
@@ -74,7 +75,9 @@ public:
 	CWiresX(const std::string& callsign, const std::string& suffix, CYSFNetwork* network, std::string tgfile, bool makeUpper, unsigned int reloadTime);
 	virtual ~CWiresX();
 
-	bool start();
+    bool read();
+	virtual void entry();
+	virtual void stop();
 
 	WX_STATUS process(const unsigned char* data, const unsigned char* source, unsigned char fi, unsigned char dt, unsigned char fn, unsigned char ft);
 
@@ -86,6 +89,7 @@ public:
 	CTGReg* findById(unsigned int id);
 	std::vector<CTGReg*>& TGSearch(const std::string& name);
 
+	bool load();
 	void processConnect(int reflector);
 	void processDisconnect(const unsigned char* source = NULL);
 	void setInfo(const std::string& name, unsigned int txFrequency, unsigned int rxFrequency, int reflector);
@@ -117,6 +121,7 @@ private:
 	unsigned int         m_start;
 	CMutex               m_mutex;
 	std::string          m_search;
+	bool                 m_stop;
 	std::vector<CTGReg*> m_currTGList;
 	std::vector<CTGReg*> m_TGSearch;
 	std::vector<CTGReg*> m_category;
@@ -127,6 +132,7 @@ private:
 	WX_STATUS processConnect(const unsigned char* source, const unsigned char* data);
 	void processDX(const unsigned char* source);
 	void processAll(const unsigned char* source, const unsigned char* data);
+	void processNews(const unsigned char* source, const unsigned char* data);
 	void processCategory(const unsigned char* source, const unsigned char* data);
 
 	void sendDXReply();

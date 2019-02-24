@@ -33,7 +33,7 @@ public:
 
 	bool open();
 
-	void setInfo(unsigned int txFrequency, unsigned int rxFrequency, float latitude, float longitude, int height, const std::string& desc, const std::string& icon, const std::string& beacon_text, int beacon_time, bool follow);
+	void setInfo(const std::string& node_callsign, unsigned int txFrequency, unsigned int rxFrequency, float latitude, float longitude, int height, const std::string& desc, const std::string& icon, const std::string& beacon_text, int beacon_time, bool follow);
 
 	void write(const unsigned char* source, const char* type, unsigned char radio, float latitude, float longitude, unsigned int tg_qrv);
 

@@ -27,7 +27,7 @@
 
 class CGPS {
 public:
-	CGPS(const std::string& callsign, const std::string& suffix, const std::string& password, const std::string& address, unsigned int port);
+	CGPS(const std::string& callsign, const std::string& node_callsign, const std::string& suffix, const std::string& password, const std::string& address, unsigned int port);
 	~CGPS();
 
 	void setInfo(unsigned int txFrequency, unsigned int rxFrequency, float latitude, float longitude, int height, const std::string& desc, const std::string& icon, const std::string& beacon_text, int beacon_time, bool follow);
@@ -47,6 +47,7 @@ private:
 	unsigned char* m_buffer;
 	bool           m_sent;
 	unsigned int   m_tg_qrv;
+	std::string	   m_callsign;
 
 	void transmitGPS(const unsigned char* source);
 };
