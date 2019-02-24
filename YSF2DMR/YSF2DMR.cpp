@@ -985,7 +985,7 @@ int CYSF2DMR::run()
 						resp = m_APRS->findCall(m_netSrc, &lat, &lon);
 
 						if (resp) {
-							LogMessage("GPS Position of %s Lat: %0.3f, Lon: %0.3f", m_netSrc.c_str(), (float)lat / 1000.0, (float)lon / 1000.0);
+							//LogMessage("GPS Position of %s Lat: %0.3f, Lon: %0.3f", m_netSrc.c_str(), (float)lat / 1000.0, (float)lon / 1000.0);
 							m_APRS->formatGPS(gps_buffer, lat, lon);
 						}
 					}
@@ -1027,6 +1027,7 @@ int CYSF2DMR::run()
 								LogMessage("GPS Position of %s Lat: %0.3f, Lon: %0.3f", m_netSrc.c_str(), (float)lat / 1000.0, (float)lon / 1000.0);
 								m_APRS->formatGPS(gps_buffer, lat, lon);
 							}
+							else LogMessage("GPS Position not available");
 
 						}
 
