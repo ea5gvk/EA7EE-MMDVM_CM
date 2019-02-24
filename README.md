@@ -4,16 +4,16 @@ This is the source code of several tools for cross-mode conversion for some digi
 
 In this fork I will only work on the YSF2DMR branch to obtain WiresX repeaters similar functionality. The idea is get network functionality right into the node instead into the Network. I will try to enhance the code to include new functionalities:
 
-- Voice Beacon (done)
-- AMBE recording (done)
-- AMBE dynamic compression to avoid voice distortion on Yaesu equipment (done)
-- Auto connect to last dynamic TG at start (done)
-- Auto back to initial default TG on timeout (done)
-- Bypass Brandmeister APRS functionality (done)
+- Voice Beacon (done & uploaded)
+- AMBE recording (done & uploaded)
+- AMBE dynamic compression to avoid voice distortion on Yaesu equipment (done & uploaded)
+- Auto connect to last dynamic TG at start (done & uploaded)
+- Auto back to initial default TG on timeout (done & uploaded)
+- Bypass Brandmeister APRS functionality (done & uploaded)
 - Bypass Brandmeister two second Banning (working on it)
-- Define Icon and message of Node sent to ARPS-IS (done)
-- Use GM button from Yaesu Equipment to put repeating beacon directly to APRS-IS (done)
-- Display number of nodes connected to master server TG on Wires-X connect info (done)
+- Define Icon and message of Node sent to ARPS-IS (done & uploaded)
+- Use GM button from Yaesu Equipment to put repeating beacon directly to APRS-IS (done & uploaded)
+- Display number of nodes connected to master server TG on Wires-X connect info (done & uploaded)
 - Store WiresX SMS and Photo on Node for later retrieval (working on it)
 - Send WiresX SMS to email and Telegram and back (working on it)
 - Send WiresX Photo to email and Telegram and back (working on it)
@@ -26,13 +26,15 @@ This software is licensed under the GPL v2 and is intended for amateur and educa
 
 You can connect via SSH to the board running last pi-star version. Then you can download the source code and compile and install the updated YSF2DMR program. To do so, you can do:
 ```
+rpi-rw
+sudo su
 cd /
-sudo mkdir opt
-sudo git clone https://github.com/msraya/MMDVM_CM.git
+mkdir opt
+git clone https://github.com/msraya/MMDVM_CM.git
 cd MMDVM_CM/YSF2DMR
 make
-sudo mv /usr/local/bin/YSF2DMR /usr/local/bin/YSF2DMR.old
-sudo cp ./YSF2DMR /usr/local/bin/YSF2DMR
+mv /usr/local/bin/YSF2DMR /usr/local/bin/YSF2DMR.old
+cp ./YSF2DMR /usr/local/bin/YSF2DMR
 ```
 Then you should understand the ysf2dmr options explained below and go to edit the /etc/ysf2dmr file, and then reload the program:
 ```
