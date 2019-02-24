@@ -965,6 +965,8 @@ unsigned int CModeConv::getYSF(unsigned char* data)
 		return TAG_NODATA;
 }
 
+char final_str[250];
+
 void CModeConv::LoadTable(unsigned int levelA, unsigned int levelB)
 {
 	int level_a,level_b;
@@ -991,14 +993,12 @@ void CModeConv::LoadTable(unsigned int levelA, unsigned int levelB)
 	for (i=level_b;i<32;i++) {
 		m_ctable[i]=ceil(((i-level_b)*pte)+level_b);
 	}
-	char final_str[120];
-	char tmp_str[20];
-	strcpy(final_str,"AMBE Compression Table: ");
-	for (i=0;i<31;i++) {
-		sprintf(tmp_str,"%d, ",m_ctable[i]);
-		strcat(final_str,tmp_str);
-	}
-	sprintf(tmp_str,"%d.",m_ctable[31]);
-	strcat(final_str,tmp_str);
+
+	strcpy(final_str,"AMBE Compression Table:");
+	sprintf(final_str,"%s %d",final_str,m_ctable[0]);
+	for (i=1;i<31;i++)
+		sprintf(final_str,"%s,%d",final_str,m_ctable[i]);
+
+	sprintf(final_str,"%s,%d.",final_str,m_ctable[31]);
 	LogMessage(final_str);
 }
