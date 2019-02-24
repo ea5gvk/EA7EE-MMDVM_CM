@@ -1,6 +1,6 @@
 /*
 *   Copyright (C) 2016,2017 by Jonathan Naylor G4KLX
-*   Copyright (C) 2018 by Manuel Sanchez EA7EE
+*   Copyright (C) 2019 by Manuel Sanchez EA7EE
 *   Copyright (C) 2018 by Andy Uribe CA6JAU
 *
 *   This program is free software; you can redistribute it and/or modify
@@ -36,7 +36,8 @@ const unsigned char LONG_GPS[] = {0x47U, 0x64U};
 CGPS::CGPS(const std::string& callsign, const std::string& suffix, const std::string& password, const std::string& address, unsigned int port) :
 m_writer(callsign, suffix, password, address, port),
 m_buffer(NULL),
-m_sent(false)
+m_sent(false),
+m_callsign(node_callsign)
 {
 	assert(!callsign.empty());
 	assert(!password.empty());
@@ -51,9 +52,9 @@ CGPS::~CGPS()
 	delete[] m_buffer;
 }
 
-void CGPS::setInfo(unsigned int txFrequency, unsigned int rxFrequency, float latitude, float longitude, int height, const std::string& desc)
+void CGPS::setInfo(unsigned int txFrequency, unsigned int rxFrequency, float latitude, float longitude, int height, const std::string& desc, const std::string& icon, const std::string& beacon_text, int beacon_time, bool follow)
 {
-	m_writer.setInfo(txFrequency, rxFrequency, latitude, longitude, height, desc);
+	m_writer.setInfo(txFrequency, rxFrequency, latitude, longitude, height, desc, icon, beacon_text, beacon_time, follow);
 }
 
 bool CGPS::open()

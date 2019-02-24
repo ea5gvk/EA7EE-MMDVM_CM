@@ -1,6 +1,6 @@
 /*
 *   Copyright (C) 2016,2017 by Jonathan Naylor G4KLX
-*   Copyright (C) 2018 by Manuel Sanchez EA7EE
+*   Copyright (C) 2019 by Manuel Sanchez EA7EE
 *   Copyright (C) 2018,2019 by Andy Uribe CA6JAU
 *
 *   This program is free software; you can redistribute it and/or modify
@@ -37,6 +37,7 @@ enum WX_STATUS {
 	WXS_DISCONNECT,
 	WXS_DX,
 	WXS_ALL,
+	WXS_NEWS,
 	WXS_FAIL
 };
 
@@ -46,6 +47,7 @@ enum WXSI_STATUS {
 	WXSI_CONNECT,
 	WXSI_DISCONNECT,
 	WXSI_ALL,
+	WXSI_NEWS,
 	WXSI_SEARCH,
 	WXSI_CATEGORY
 };
@@ -62,20 +64,22 @@ public:
 
 	std::string  m_id;
 	std::string  m_opt;
+	std::string  m_count;
 	std::string  m_name;
 	std::string  m_desc;
 };
 
-class CWiresX {
+class CWiresX: public CThread  {
 public:
-	CWiresX(const std::string& callsign, const std::string& suffix, CYSFNetwork* network, std::string tgfile, bool makeUpper);
-	~CWiresX();
+	CWiresX(const std::string& callsign, const std::string& suffix, CYSFNetwork* network, std::string tgfile, bool makeUpper, unsigned int reloadTime);
+	virtual ~CWiresX();
 
 	bool start();
 
 	WX_STATUS process(const unsigned char* data, const unsigned char* source, unsigned char fi, unsigned char dt, unsigned char fn, unsigned char ft);
 
 	unsigned int getDstID();
+	unsigned int getTgCount();
 	unsigned int getOpt(unsigned int id);
 	unsigned int getFullDstID();
 
@@ -91,6 +95,8 @@ public:
 
 private:
 	std::string          m_callsign;
+	std::string			 m_tgfile;
+	unsigned int         m_reloadTime;
 	std::string          m_node;
 	std::string          m_id;
 	std::string          m_name;
@@ -100,6 +106,7 @@ private:
 	unsigned int         m_fulldstID;
 	CYSFNetwork*         m_network;
 	unsigned char*       m_command;
+	unsigned int         m_count;
 	CTimer               m_timer;
 	unsigned char        m_seqNo;
 	unsigned char*       m_header;
@@ -108,6 +115,7 @@ private:
 	unsigned char*       m_csd3;
 	WXSI_STATUS          m_status;
 	unsigned int         m_start;
+	CMutex               m_mutex;
 	std::string          m_search;
 	std::vector<CTGReg*> m_currTGList;
 	std::vector<CTGReg*> m_TGSearch;
@@ -123,6 +131,7 @@ private:
 
 	void sendDXReply();
 	void sendAllReply();
+	void sendNewsReply();
 	void sendSearchReply();
 	void sendSearchNotFoundReply();
 	void sendCategoryReply();

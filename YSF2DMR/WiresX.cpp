@@ -1,6 +1,6 @@
 /*
 *   Copyright (C) 2016,2017 by Jonathan Naylor G4KLX
-*   Copyright (C) 2018 by Manuel Sanchez EA7EE
+*   Copyright (C) 2019 by Manuel Sanchez EA7EE
 *   Copyright (C) 2018,2019 by Andy Uribe CA6JAU
 *
 *   This program is free software; you can redistribute it and/or modify
@@ -38,19 +38,27 @@ const unsigned char DX_REQ[]    = {0x5DU, 0x71U, 0x5FU};
 const unsigned char CONN_REQ[]  = {0x5DU, 0x23U, 0x5FU};
 const unsigned char DISC_REQ[]  = {0x5DU, 0x2AU, 0x5FU};
 const unsigned char ALL_REQ[]   = {0x5DU, 0x66U, 0x5FU};
+const unsigned char NEWS_REQ[]      = {0x5DU, 0x63U, 0x5FU};
 const unsigned char CAT_REQ[]   = {0x5DU, 0x67U, 0x5FU};
 
 const unsigned char DX_RESP[]   = {0x5DU, 0x51U, 0x5FU, 0x26U};
+const unsigned char DX_RESP2[]   = {0x5DU, 0x52U, 0x5FU, 0x26U};
+
+const unsigned char DX_BEACON[]   = {0x5DU, 0x42U, 0x5FU, 0x26U};
 const unsigned char CONN_RESP[] = {0x5DU, 0x41U, 0x5FU, 0x26U};
 const unsigned char DISC_RESP[] = {0x5DU, 0x41U, 0x5FU, 0x26U};
 const unsigned char ALL_RESP[]  = {0x5DU, 0x46U, 0x5FU, 0x26U};
+
+const unsigned char NEWS_RESP[]  = {0x5DU, 0x43U, 0x5FU, 0x26U};
 
 const unsigned char DEFAULT_FICH[] = {0x20U, 0x00U, 0x01U, 0x00U};
 
 const unsigned char NET_HEADER[] = "YSFD                    ALL      ";
 
-CWiresX::CWiresX(const std::string& callsign, const std::string& suffix, CYSFNetwork* network, std::string tgfile, bool makeUpper) :
+CWiresX::CWiresX(const std::string& callsign, const std::string& suffix, CYSFNetwork* network, std::string tgfile, bool makeUpper, unsigned int reloadTime) :
 m_callsign(callsign),
+m_tgfile(tgfile),
+m_reloadTime(reloadTime),
 m_node(),
 m_id(),
 m_name(),
@@ -67,6 +75,7 @@ m_csd2(NULL),
 m_csd3(NULL),
 m_status(WXSI_NONE),
 m_start(0U),
+m_mutex(),
 m_search(),
 m_category(),
 m_makeUpper(makeUpper),
@@ -257,6 +266,9 @@ WX_STATUS CWiresX::process(const unsigned char* data, const unsigned char* sourc
 			return WXS_ALL;
 		} else if (::memcmp(m_command + 1U, CONN_REQ, 3U) == 0) {
 			return processConnect(source, m_command + 5U);
+		} else if (::memcmp(m_command + 1U, NEWS_REQ, 3U) == 0) {
+			processNews(source, m_command + 5U);
+			return WXS_NEWS;
 		} else if (::memcmp(m_command + 1U, DISC_REQ, 3U) == 0) {
 			processDisconnect(source);
 			return WXS_DISCONNECT;
@@ -284,19 +296,29 @@ unsigned int CWiresX::getOpt(unsigned int id)
 
 	sprintf(dstid, "%05d", id);
 	dstid[5U] = 0;
+	m_mutex.lock();
 
 	for (std::vector<CTGReg*>::iterator it = m_currTGList.begin(); it != m_currTGList.end(); ++it) {
 		std::string tgid = (*it)->m_id;
 		if (dstid == tgid.substr(2, 5)) {
 			opt = (*it)->m_opt;
 			m_fulldstID = atoi(tgid.c_str());
+			m_count = atoi(((*it)->m_count).c_str());
+			m_mutex.unlock();
 			return atoi(opt.c_str());;
 		}
 	}
 
 	m_fulldstID = id;
+	m_mutex.unlock();
+	m_count=0;
 
 	return 0U;
+}
+
+unsigned int CWiresX::getTgCount()
+{
+	return m_count;
 }
 
 unsigned int CWiresX::getFullDstID()
@@ -373,7 +395,39 @@ void CWiresX::processAll(const unsigned char* source, const unsigned char* data)
 		m_status = WXSI_SEARCH;
 
 		m_timer.start();
+	} else if (data[0U] == 'A' && data[1U] == '1') {
+		::LogMessage("Received LOCAL NEWS for \"%16.16s\" from %10.10s", data + 5U, source);
+
+		char buffer[4U];
+		::memcpy(buffer, data + 2U, 3U);
+		buffer[3U] = 0x00U;
+
+		m_start = ::atoi(buffer);
+		if (m_start > 0U)
+			m_start--;
+
+		m_status = WXSI_ALL;
+
+		m_timer.start();
 	}
+}
+
+void CWiresX::processNews(const unsigned char* source, const unsigned char* data)
+{
+
+	::LogMessage("Received LOCAL NEWS for \"%16.16s\" from %10.10s", data + 5U, source);
+
+	char buffer[4U];
+	::memcpy(buffer, data + 2U, 3U);
+	buffer[3U] = 0x00U;
+
+	m_start = ::atoi(buffer);
+	if (m_start > 0U)
+		m_start--;
+
+	m_status = WXSI_NEWS;
+
+	m_timer.start();
 }
 
 WX_STATUS CWiresX::processConnect(const unsigned char* source, const unsigned char* data)
@@ -420,6 +474,8 @@ void CWiresX::clock(unsigned int ms)
 			CThread::sleep(100U);
 			sendDXReply();
 			break;
+		case WXSI_NEWS:
+			sendNewsReply();
 		case WXSI_ALL:
 			sendAllReply();
 			break;
@@ -654,7 +710,10 @@ void CWiresX::sendDXReply()
 		buf1[i] = 0;
 
 		::memcpy(data + 41U, buf1, 16U);
-		::memcpy(data + 57U, "000", 3U);
+		char tmp[5];
+		sprintf(tmp,"%03d",m_count);
+		LogMessage("Count TG %d: %d links.",m_dstID,m_count);
+		::memcpy(data + 57U, tmp, 3U);
 		::memcpy(data + 70U, "Descripcion   ", 14U);
 
 	}
@@ -740,7 +799,10 @@ void CWiresX::sendConnectReply(unsigned int dstID)
 	buf1[i] = 0;
 
 	::memcpy(data + 41U, buf1, 16U);
-	::memcpy(data + 57U, "000", 3U);
+	char tmp[5];
+	sprintf(tmp,"%03d",m_count);
+	LogMessage("Count TG %d: %d links.",m_dstID,m_count);
+	::memcpy(data + 57U, tmp, 3U);
 	::memcpy(data + 70U, "Descripcion   ", 14U);
 
 	data[84U] = '0';
@@ -840,7 +902,7 @@ void CWiresX::sendAllReply()
 			data[i + offset + 6U] = tgreg->m_name.at(i);
 
 		for (unsigned int i = 0U; i < 3U; i++)
-			data[i + offset + 22U] = '0';
+			data[i + offset + 22U] = tgreg->m_count.at(i);
 
 		for (unsigned int i = 0U; i < 10U; i++)
 			data[i + offset + 25U] = ' ';
@@ -861,6 +923,84 @@ void CWiresX::sendAllReply()
 	data[offset + 1U] = CCRC::addCRC(data, offset + 1U);
 
 	//CUtils::dump(1U, "ALL Reply", data, offset + 2U);
+
+	createReply(data, offset + 2U);
+
+	m_seqNo++;
+}
+
+void CWiresX::sendNewsReply()
+{
+	unsigned char data[1100U];
+	::memset(data, 0x00U, 1100U);
+
+	data[0U] = m_seqNo;
+
+	for (unsigned int i = 0U; i < 4U; i++)
+		data[i + 1U] = NEWS_RESP[i];
+
+	data[5U] = '2';
+	data[6U] = '1';
+
+	m_start=0;
+
+	::LogMessage("Sending News Request");
+
+	for (unsigned int i = 0U; i < 5U; i++)
+		data[i + 7U] = m_id.at(i);
+
+	for (unsigned int i = 0U; i < 10U; i++)
+		data[i + 12U] = m_node.at(i);
+
+	m_mutex.lock();
+
+	unsigned int total = m_currTGList.size();
+	if (total > 999U) total = 999U;
+
+	unsigned int n = total - m_start;
+	if (n > 20U) n = 20U;
+
+	::sprintf((char*)(data + 22U), "%03u%03u", n, total);
+
+	data[28U] = 0x0DU;
+
+	unsigned int offset = 29U;
+	for (unsigned int j = 0U; j < n; j++, offset += 50U) {
+		CTGReg* tgreg = m_currTGList.at(j + m_start);
+
+		::memset(data + offset, ' ', 50U);
+
+		data[offset + 0U] = '5';
+
+		for (unsigned int i = 0U; i < 5U; i++)
+			data[i + offset + 1U] = tgreg->m_id.at(i + 2U);
+
+		for (unsigned int i = 0U; i < 16U; i++)
+			data[i + offset + 6U] = tgreg->m_name.at(i);
+
+		for (unsigned int i = 0U; i < 3U; i++)
+			data[i + offset + 22U] = tgreg->m_count.at(i);
+
+		for (unsigned int i = 0U; i < 10U; i++)
+			data[i + offset + 25U] = ' ';
+
+		for (unsigned int i = 0U; i < 14U; i++)
+			data[i + offset + 35U] = tgreg->m_desc.at(i);
+
+		data[offset + 49U] = 0x0DU;
+	}
+	m_mutex.unlock();
+
+	unsigned int k = 1029U - offset;
+	for(unsigned int i = 0U; i < k; i++)
+		data[i + offset] = 0x20U;
+
+	offset += k;
+
+	data[offset + 0U] = 0x03U;			// End of data marker
+	data[offset + 1U] = CCRC::addCRC(data, offset + 1U);
+
+	CUtils::dump(1U, "NEWS Reply", data, offset + 2U);
 
 	createReply(data, offset + 2U);
 
@@ -927,7 +1067,7 @@ void CWiresX::sendSearchReply()
 			data[i + offset + 6U] = tgname.at(i);
 
 		for (unsigned int i = 0U; i < 3U; i++)
-			data[i + offset + 22U] = '0';
+			data[i + offset + 22U] = tgreg->m_count.at(i);
 
 		for (unsigned int i = 0U; i < 10U; i++)
 			data[i + offset + 25U] = ' ';
@@ -953,6 +1093,8 @@ void CWiresX::sendSearchReply()
 
 	m_seqNo++;
 }
+
+
 
 static bool refComparison(const CTGReg* r1, const CTGReg* r2)
 {
@@ -991,6 +1133,8 @@ std::vector<CTGReg*>& CWiresX::TGSearch(const std::string& name)
 
 	unsigned int len = trimmed.size();
 
+	m_mutex.lock();
+
 	for (std::vector<CTGReg*>::iterator it = m_currTGList.begin(); it != m_currTGList.end(); ++it) {
 		std::string tgname = (*it)->m_name;
 		tgname.erase(std::find_if(tgname.rbegin(), tgname.rend(), std::not1(std::ptr_fun<int, int>(std::isspace))).base(), tgname.end());
@@ -1001,6 +1145,8 @@ std::vector<CTGReg*>& CWiresX::TGSearch(const std::string& name)
 	}
 
 	std::sort(m_TGSearch.begin(), m_TGSearch.end(), refComparison);
+
+	m_mutex.unlock();
 
 	return m_TGSearch;
 }

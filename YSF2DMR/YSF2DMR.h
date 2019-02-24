@@ -1,7 +1,7 @@
 /*
 *   Copyright (C) 2016 by Jonathan Naylor G4KLX
 *   Copyright (C) 2018 by Andy Uribe CA6JAU
-*   Copyright (C) 2018 by Manuel Sanchez EA7EE
+*   Copyright (C) 2019 by Manuel Sanchez EA7EE
 *
 *   This program is free software; you can redistribute it and/or modify
 *   it under the terms of the GNU General Public License as published by
@@ -57,6 +57,13 @@ enum TG_STATUS {
 	SEND_PTT
 };
 
+enum BE_STATUS {
+	BE_OFF,
+	BE_INIT,
+	BE_DATA,
+	BE_EOT
+};
+
 class CYSF2DMR
 {
 public:
@@ -107,6 +114,8 @@ private:
 	bool             m_remoteGateway;
 	unsigned int     m_hangTime;
 	bool             m_firstSync;
+	bool			 m_tgConnected;
+    bool             m_saveAMBE;
 
 	bool createDMRNetwork();
 	void createGPS();
@@ -114,6 +123,7 @@ private:
 	unsigned int findYSFID(std::string cs, bool showdst);
 	std::string getSrcYSF(const unsigned char* source);
 	void writeXLXLink(unsigned int srcId, unsigned int dstId, CDMRNetwork* network);
+	int  getTg(int m_srcHS);
 };
 
 #endif

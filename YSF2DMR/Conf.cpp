@@ -1,7 +1,7 @@
 /*
  *   Copyright (C) 2015-2019 by Jonathan Naylor G4KLX
  *   Copyright (C) 2018,2019 by Andy Uribe CA6JAU
- *   Copyright (C) 2018 by Manuel Sanchez EA7EE
+ *   Copyright (C) 2019 by Manuel Sanchez EA7EE
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -35,7 +35,8 @@ enum SECTION {
   SECTION_DMR_NETWORK,
   SECTION_DMRID_LOOKUP,
   SECTION_LOG,
-  SECTION_APRS_FI
+  SECTION_APRS_FI,
+  SECTION_STORAGE
 };
 
 CConf::CConf(const std::string& file) :
@@ -90,7 +91,17 @@ m_aprsPassword(),
 m_aprsCallsign(),
 m_aprsAPIKey(),
 m_aprsRefresh(120),
-m_aprsDescription()
+m_aprsDescription(),
+m_icon(),
+m_beacon_text(),
+m_aprs_beacon_time(20U),
+m_aprs_follow_me(false),
+m_TimeoutTime(0U),
+m_BeaconTime(0U),
+m_SaveAMBE(false),
+m_tgListReload(30U),
+m_AMBECompA(0U),
+m_AMBECompB(0U)
 {
 }
 
@@ -125,7 +136,9 @@ bool CConf::read()
 	  else if (::strncmp(buffer, "[Log]", 5U) == 0)
 		  section = SECTION_LOG;
 	  else if (::strncmp(buffer, "[aprs.fi]", 5U) == 0)
-		  section = SECTION_APRS_FI;	  
+		  section = SECTION_APRS_FI;
+	  else if (::strncmp(buffer, "[Storage]", 5U) == 0)
+		  section = SECTION_STORAGE;
 	  else
         section = SECTION_NONE;
 
@@ -255,8 +268,17 @@ bool CConf::read()
 			for (unsigned int i = 0U; value[i] != 0; i++)
 				value[i] = ::toupper(value[i]);
 			m_aprsCallsign = value;
-		} else if (::strcmp(key, "Enable") == 0)
+		}
+		else if (::strcmp(key, "Icon") == 0)
+				m_icon = value;
+		else if (::strcmp(key, "Beacon") == 0)
+				m_beacon_text = value;
+		else if (::strcmp(key, "BeaconTime") == 0)
+				m_aprs_beacon_time = (unsigned int)::atoi(value);
+		else if (::strcmp(key, "Enable") == 0)
 			m_aprsEnabled = ::atoi(value) == 1;
+		else if (::strcmp(key, "FollowMe") == 0)
+			m_aprs_follow_me = ::atoi(value) == 1;
 		else if (::strcmp(key, "Server") == 0)
 			m_aprsServer = value;
 		else if (::strcmp(key, "Port") == 0)
@@ -268,8 +290,21 @@ bool CConf::read()
 		else if (::strcmp(key, "Refresh") == 0)
 			m_aprsRefresh = (unsigned int)::atoi(value);		
 		else if (::strcmp(key, "Description") == 0)
-			m_aprsDescription = value;	
-	}
+			m_aprsDescription = value;
+	} else if (section == SECTION_STORAGE) {
+		if (::strcmp(key, "TimeoutTime") == 0)
+			m_TimeoutTime = (unsigned int)::atoi(value);
+		else if (::strcmp(key, "BeaconTime") == 0)
+			m_BeaconTime = (unsigned int)::atoi(value);
+		else if (::strcmp(key, "SaveAMBE") == 0)
+			m_SaveAMBE = ::atoi(value) == 1;
+		else if (::strcmp(key, "TGReload") == 0)
+			m_tgListReload = (unsigned int)::atoi(value);
+		else if (::strcmp(key, "AMBECompA") == 0)
+			m_AMBECompA = (unsigned int)::atoi(value);
+		else if (::strcmp(key, "AMBECompB") == 0)
+			m_AMBECompB = (unsigned int)::atoi(value);
+		}
   }
 
   ::fclose(fp);
@@ -370,6 +405,26 @@ std::string CConf::getLocation() const
 std::string CConf::getDescription() const
 {
 	return m_description;
+}
+
+std::string CConf::getAPRSIcon() const
+{
+  return m_icon;
+}
+
+std::string CConf::getAPRSBeaconText() const
+{
+  return m_beacon_text;
+}
+
+unsigned int CConf::getAPRSBeaconTime() const
+{
+	return m_aprs_beacon_time;
+}
+
+bool CConf::getAPRSFollowMe() const
+{
+	return m_aprs_follow_me;
 }
 
 std::string CConf::getURL() const
@@ -535,4 +590,34 @@ std::string CConf::getLogFilePath() const
 std::string CConf::getLogFileRoot() const
 {
   return m_logFileRoot;
+}
+
+unsigned int CConf::getTimeoutTime() const
+{
+	return m_TimeoutTime;
+}
+
+unsigned int CConf::getBeaconTime() const
+{
+	return m_BeaconTime;
+}
+
+bool CConf::getSaveAMBE() const
+{
+	return m_SaveAMBE;
+}
+
+unsigned int CConf::getTGListReload() const
+{
+	return m_tgListReload;
+}
+
+unsigned int CConf::getAMBECompA() const
+{
+	return m_AMBECompA;
+}
+
+unsigned int CConf::getAMBECompB() const
+{
+	return m_AMBECompB;
 }

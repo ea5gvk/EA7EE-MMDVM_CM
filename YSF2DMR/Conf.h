@@ -1,7 +1,7 @@
 /*
  *   Copyright (C) 2015-2019 by Jonathan Naylor G4KLX
  *   Copyright (C) 2018,2019 by Andy Uribe CA6JAU
- *   Copyright (C) 2018 by Manuel Sanchez EA7EE
+ *   Copyright (C) 2019 by Manuel Sanchez EA7EE
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -95,6 +95,18 @@ public:
   std::string  getAPRSAPIKey() const;
   unsigned int getAPRSRefresh() const;
   std::string  getAPRSDescription() const;
+  std::string  getAPRSIcon() const;
+  std::string  getAPRSBeaconText() const;
+  unsigned int getAPRSBeaconTime() const;
+  bool         getAPRSFollowMe() const;
+
+  // The Storage section
+  unsigned int getTimeoutTime() const;
+  unsigned int getBeaconTime() const;
+  bool 		   getSaveAMBE() const;
+  unsigned int getTGListReload() const;
+  unsigned int getAMBECompA() const;
+  unsigned int getAMBECompB() const;
 
 private:
   std::string  m_file;
@@ -155,6 +167,18 @@ private:
   std::string  m_aprsAPIKey;
   unsigned int m_aprsRefresh;
   std::string  m_aprsDescription;
+  std::string  m_icon;
+  std::string  m_beacon_text;
+  unsigned int m_aprs_beacon_time;
+  bool		   m_aprs_follow_me;
+
+
+  unsigned int m_TimeoutTime;
+  unsigned int m_BeaconTime;
+  bool 		   m_SaveAMBE;
+  unsigned int m_tgListReload;
+  unsigned int m_AMBECompA;
+  unsigned int m_AMBECompB;
 
 };
 

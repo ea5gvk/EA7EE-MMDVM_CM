@@ -1,6 +1,6 @@
 /*
  *   Copyright (C) 2010,2011,2012,2016,2017 by Jonathan Naylor G4KLX
- *   Copyright (C) 2018 by Manuel Sanchez EA7EE
+ *   Copyright (C) 2019 by Manuel Sanchez EA7EE
  *   Copyright (C) 2018 by Andy Uribe CA6JAU
  *
  *   This program is free software; you can redistribute it and/or modify
@@ -33,7 +33,7 @@ public:
 
 	bool open();
 
-	void setInfo(unsigned int txFrequency, unsigned int rxFrequency, float latitude, float longitude, int height, const std::string& desc);
+	void setInfo(unsigned int txFrequency, unsigned int rxFrequency, float latitude, float longitude, int height, const std::string& desc, const std::string& icon, const std::string& beacon_text, int beacon_time, bool follow);
 
 	void write(const unsigned char* source, const char* type, unsigned char radio, float latitude, float longitude, unsigned int tg_qrv);
 
@@ -50,8 +50,14 @@ private:
 	unsigned int       m_rxFrequency;
 	float              m_latitude;
 	float              m_longitude;
+	float              fm_latitude;
+	float              fm_longitude;
+	bool			   m_follow;
 	int                m_height;
 	std::string        m_desc;
+	std::string        m_icon;
+	std::string        m_beacon_text;
+	std::string		   m_node_callsign;
 
 	void sendIdFrames();
 };

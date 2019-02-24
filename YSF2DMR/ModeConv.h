@@ -1,6 +1,7 @@
 /*
  *   Copyright (C) 2010,2014,2016 by Jonathan Naylor G4KLX
  *   Copyright (C) 2018 by Andy Uribe CA6JAU
+ *   Copyright (C) 2019 by Manuel Sanchez EA7EE
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -29,6 +30,8 @@ public:
 	CModeConv();
 	~CModeConv();
 
+	void LoadTable(unsigned int levelA, unsigned int levelB);
+
 	void putDMR(unsigned char* bytes);
 	void putDMRHeader();
 	void putDMREOT();
@@ -41,6 +44,8 @@ public:
 	unsigned int getYSF(unsigned char* bytes);
 	unsigned int getDMR(unsigned char* bytes);
 
+	void AMB2YSF(unsigned char * bytes);
+
 private:
 	void putAMBE2YSF(unsigned int a, unsigned int b, unsigned int dat_c);
 	void putAMBE2DMR(unsigned int dat_a, unsigned int dat_b, unsigned int dat_c);
@@ -48,6 +53,7 @@ private:
 	unsigned int m_dmrN;
 	CRingBuffer<unsigned char> m_YSF;
 	CRingBuffer<unsigned char> m_DMR;
+	unsigned char m_ctable[32];
 
 };
 

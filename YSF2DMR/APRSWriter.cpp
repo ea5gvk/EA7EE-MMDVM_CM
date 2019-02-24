@@ -1,6 +1,6 @@
 /*
  *   Copyright (C) 2010-2014,2016,2017 by Jonathan Naylor G4KLX
- *   Copyright (C) 2018 by Manuel Sanchez EA7EE
+ *   Copyright (C) 2019 by Manuel Sanchez EA7EE
  *   Copyright (C) 2018 by Andy Uribe CA6JAU
  *
  *   This program is free software; you can redistribute it and/or modify
@@ -36,6 +36,7 @@ m_txFrequency(0U),
 m_rxFrequency(0U),
 m_latitude(0.0F),
 m_longitude(0.0F),
+m_follow(false),
 m_height(0),
 m_desc()
 {
@@ -56,7 +57,7 @@ CAPRSWriter::~CAPRSWriter()
 {
 }
 
-void CAPRSWriter::setInfo(unsigned int txFrequency, unsigned int rxFrequency, float latitude, float longitude, int height, const std::string& desc)
+void CAPRSWriter::setInfo(unsigned int txFrequency, unsigned int rxFrequency, float latitude, float longitude, int height, const std::string& desc, const std::string& icon, const std::string& beacon_text, int beacon_time, bool follow)
 {
 	m_txFrequency = txFrequency;
 	m_rxFrequency = rxFrequency;
@@ -64,6 +65,17 @@ void CAPRSWriter::setInfo(unsigned int txFrequency, unsigned int rxFrequency, fl
 	m_longitude   = longitude;
 	m_height      = height;
 	m_desc        = desc;
+	m_follow	  = follow;
+	m_idTimer.start(60U * beacon_time);
+	m_node_callsign = node_callsign;
+
+	if (icon.length()>0) m_icon = icon;
+	else m_icon = "YY";
+
+	if (beacon_text.length()>0) m_beacon_text = beacon_text;
+	else m_beacon_text = "YSF2DMR - Private HotSpot";
+
+	sendIdFrames();
 }
 
 bool CAPRSWriter::open()
@@ -78,6 +90,17 @@ void CAPRSWriter::write(const unsigned char* source, const char* type, unsigned 
 	assert(type != NULL);
 
 	char callsign[11U];
+
+	strcpy(callsign, (const char *)source);
+	unsigned int i=0;
+	while ((callsign[i]!=' ') && (i<strlen(callsign))) i++;
+	callsign[i]=0;
+
+	if (strcmp(callsign,m_node_callsign.c_str())==0) {
+		LogMessage("Catching %s position.",m_node_callsign.c_str());
+		fm_latitude = fLatitude;
+		fm_longitude = fLongitude;
+	}
 
 	::memcpy(callsign, source, YSF_CALLSIGN_LENGTH);
 	callsign[YSF_CALLSIGN_LENGTH] = 0x00U;
@@ -154,38 +177,24 @@ void CAPRSWriter::close()
 
 void CAPRSWriter::sendIdFrames()
 {
-	if (!m_thread->isConnected())
-		return;
 
 	// Default values aren't passed on
 	if (m_latitude == 0.0F && m_longitude == 0.0F)
 		return;
 
-	char desc[200U];
-	if (m_txFrequency != 0U) {
-		float offset = float(int(m_rxFrequency) - int(m_txFrequency)) / 1000000.0F;
-		::sprintf(desc, "MMDVM Voice %.5LfMHz %c%.4lfMHz%s%s",
-			(long double)(m_txFrequency) / 1000000.0F,
-			offset < 0.0F ? '-' : '+',
-			::fabs(offset), m_desc.empty() ? "" : ", ", m_desc.c_str());
-	} else {
-		::sprintf(desc, "MMDVM Voice%s%s", m_desc.empty() ? "" : ", ", m_desc.c_str());
+	double tempLat, tempLong;
+
+	if (fm_latitude == 0.0F) tempLat  = ::fabs(m_latitude);
+	else {
+		//LogMessage("lat: %f",fm_latitude);
+		tempLat  = ::fabs(fm_latitude);
 	}
 
-	const char* band = "4m";
-	if (m_txFrequency >= 1200000000U)
-		band = "1.2";
-	else if (m_txFrequency >= 420000000U)
-		band = "440";
-	else if (m_txFrequency >= 144000000U)
-		band = "2m";
-	else if (m_txFrequency >= 50000000U)
-		band = "6m";
-	else if (m_txFrequency >= 28000000U)
-		band = "10m";
-
-	double tempLat  = ::fabs(m_latitude);
-	double tempLong = ::fabs(m_longitude);
+	if (fm_longitude == 0.0F) tempLong = ::fabs(m_longitude);
+	else {
+		//LogMessage("lon: %f",fm_longitude);
+		tempLong = ::fabs(fm_longitude);
+	}
 
 	double latitude  = ::floor(tempLat);
 	double longitude = ::floor(tempLong);
@@ -199,19 +208,15 @@ void CAPRSWriter::sendIdFrames()
 	char lon[20U];
 	::sprintf(lon, "%08.2lf", longitude);
 
-	std::string server = m_callsign;
-	size_t pos = server.find_first_of('-');
-	if (pos == std::string::npos)
-		server.append("-S");
-	else
-		server.append("S");
-
 	char output[500U];
-	::sprintf(output, "%s>APDG03,TCPIP*,qAC,%s:!%s%cD%s%c&/A=%06.0f%s %s",
-		m_callsign.c_str(), server.c_str(),
-		lat, (m_latitude < 0.0F)  ? 'S' : 'N',
-		lon, (m_longitude < 0.0F) ? 'W' : 'E',
-		float(m_height) * 3.28F, band, desc);
+	char mobile[10];
+	if (fm_latitude == 0.0F) strcpy(mobile,"");
+	else strcpy(mobile," /mobile");
+	::sprintf(output, "%s>APDG03,TCPIP*,qAC,%s:!%s%c%c%s%c%c%s%s",
+	    m_node_callsign.c_str(), m_node_callsign.c_str(),
+		lat, (m_latitude < 0.0F)  ? 'S' : 'N',(m_icon.c_str())[0],
+		lon, (m_longitude < 0.0F) ? 'W' : 'E',(m_icon.c_str())[1],
+		m_beacon_text.c_str(), mobile);
 
 	m_thread->write(output);
 

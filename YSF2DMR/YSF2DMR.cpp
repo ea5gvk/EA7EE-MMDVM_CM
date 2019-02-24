@@ -36,9 +36,13 @@ const unsigned char dt2_temp[] = {0x00, 0x00, 0x00, 0x00, 0x6C, 0x20, 0x1C, 0x20
 
 #define DMR_FRAME_PER       55U
 #define YSF_FRAME_PER       90U
+#define BEACON_PER			55U
 
 #define XLX_SLOT            2U
 #define XLX_COLOR_CODE      3U
+
+#define TIME_MIN			60000U
+#define TIME_SEC			1000U
 
 #if defined(_WIN32) || defined(_WIN64)
 const char* DEFAULT_INI_FILE = "YSF2DMR.ini";
@@ -145,7 +149,8 @@ m_xlxReflectors(NULL),
 m_xlxrefl(0U),
 m_remoteGateway(false),
 m_hangTime(1000U),
-m_firstSync(false)
+m_firstSync(false),
+m_tgConnected(false)
 {
 	m_ysfFrame = new unsigned char[200U];
 	m_dmrFrame = new unsigned char[50U];
@@ -256,11 +261,18 @@ int CYSF2DMR::run()
 	m_remoteGateway = m_conf.getRemoteGateway();
 	m_hangTime = m_conf.getHangTime();
 
+	m_saveAMBE				 = m_conf.getSaveAMBE();
 	bool debug               = m_conf.getDMRNetworkDebug();
 	in_addr dstAddress       = CUDPSocket::lookup(m_conf.getDstAddress());
 	unsigned int dstPort     = m_conf.getDstPort();
 	std::string localAddress = m_conf.getLocalAddress();
 	unsigned int localPort   = m_conf.getLocalPort();
+	m_saveAMBE				 = m_conf.getSaveAMBE();
+
+	// Get timeout and beacon times from Conf.cpp
+	unsigned int m_timeout_time = m_conf.getTimeoutTime();
+	unsigned int m_beacon_time = m_conf.getBeaconTime();
+	unsigned int reloadTime = m_conf.getDMRIdLookupTime();
 
 	std::string fileName    = m_conf.getDMRXLXFile();
 	m_xlxReflectors = new CReflectors(fileName, 60U);
@@ -270,8 +282,17 @@ int CYSF2DMR::run()
 	m_ysfNetwork->setDestination(dstAddress, dstPort);
 
 	LogInfo("General Parameters");
+	LogInfo("    Timeout TG Time: %d min", m_timeout_time);
+	LogInfo("    Beacon Time %d min", m_beacon_time);
+	LogInfo("    AMBE Recording: %s", m_saveAMBE ? "yes" : "no");
+    LogInfo("    TG List Reload Time: %d min", tglist_reload);
+    LogInfo("    DMR Callsign List Reload Time: %d min", reloadTime);
 	LogInfo("    Remote Gateway: %s", m_remoteGateway ? "yes" : "no");
 	LogInfo("    Hang Time: %u ms", m_hangTime);
+
+	unsigned int lev_a = m_conf.getAMBECompA();
+	unsigned int lev_b = m_conf.getAMBECompB();
+	m_conv.LoadTable(lev_a,lev_b);
 
 	ret = m_ysfNetwork->open();
 	if (!ret) {
@@ -288,7 +309,6 @@ int CYSF2DMR::run()
 	}
 	
 	std::string lookupFile  = m_conf.getDMRIdLookupFile();
-	unsigned int reloadTime = m_conf.getDMRIdLookupTime();
 
 	m_lookup = new CDMRLookup(lookupFile, reloadTime);
 	m_lookup->read();
@@ -305,8 +325,11 @@ int CYSF2DMR::run()
 	// CWiresX Control Object
 	if (m_enableWiresX) {
 		bool makeUpper = m_conf.getWiresXMakeUpper();
-		m_wiresX = new CWiresX(m_callsign, m_suffix, m_ysfNetwork, m_TGList, makeUpper);
+		m_wiresX = new CWiresX(m_callsign, m_suffix, m_ysfNetwork, m_TGList, makeUpper, tglist_reload);
 		m_dtmf = new CDTMF;
+
+		if (m_wiresX->getOpt(m_dstid)==2) m_dmrflco = FLCO_USER_USER;
+		else m_dmrflco = FLCO_GROUP;
 	}
 
 	std::string name = m_conf.getDescription();
@@ -326,11 +349,16 @@ int CYSF2DMR::run()
 	CStopWatch stopWatch;
 	CStopWatch ysfWatch;
 	CStopWatch dmrWatch;
+	CStopWatch bea_voice_Watch;
+	CStopWatch beacon_Watch;
+	CStopWatch timeout_Watch;
 	stopWatch.start();
 	ysfWatch.start();
 	dmrWatch.start();
 	pollTimer.start();
 	ysfWatchdog.stop();
+	beacon_Watch.start();
+	timeout_Watch.start();
 
 	unsigned char ysf_cnt = 0;
 	unsigned char dmr_cnt = 0;
@@ -343,7 +371,16 @@ int CYSF2DMR::run()
 	TG_STATUS TG_connect_state = NONE;
 	unsigned char gps_buffer[20U];
 
-	unsigned int tglistOpt = 0; 
+	unsigned int tglistOpt = 0;
+	FILE *file_out=NULL;
+
+	unsigned int not_busy=1;
+	unsigned int m_original = m_conf.getDMRDstId();
+	FILE *file=NULL;
+	unsigned int count_file_AMBE=0;
+
+	BE_STATUS beacon_status;
+	beacon_status = BE_OFF;
 
 	for (; end == 0;) {
 		unsigned char buffer[2000U];
@@ -351,10 +388,54 @@ int CYSF2DMR::run()
 		CDMRData tx_dmrdata;
 		unsigned int ms = stopWatch.elapsed();
 
-		if (m_dmrNetwork->isConnected() && !m_xlxmodule.empty() && !m_xlxConnected) {
-			writeXLXLink(m_srcid, m_dstid, m_dmrNetwork);
-			LogMessage("XLX, Linking to reflector XLX%03u, module %s", m_xlxrefl, m_xlxmodule.c_str());
-			m_xlxConnected = true;
+		// TG Connection safe process at init
+		// To unlink old dynamic TG
+		if (m_dmrNetwork->isConnected() ) {
+			if (!m_tgConnected){
+				m_srcid=m_srcHS / 100U;
+				SendDummyDMR(m_srcid, m_idUnlink, m_flcoUnlink);
+				m_ptt_dstid=m_dstid;
+				unlinkReceived = false;
+				TG_connect_state = WAITING_UNLINK;
+				m_tgConnected = true;
+				LogMessage("Initial linking to TG %d.", m_dstid);
+				TGChange.start();
+			}
+
+			if (!m_xlxmodule.empty() && !m_xlxConnected) {
+				writeXLXLink(m_srcid, m_dstid, m_dmrNetwork);
+				LogMessage("XLX, Linking to reflector XLX%03u, module %s", m_xlxrefl, m_xlxmodule.c_str());
+				m_xlxConnected = true;
+			}
+		}
+
+		// If Beacon time start voice beacon transmit
+		if (m_beacon_time && not_busy && (beacon_Watch.elapsed()> (m_beacon_time*TIME_MIN))) {
+			not_busy=0;
+			beacon_status = BE_INIT;
+			bea_voice_Watch.start();
+			beacon_Watch.start();
+		}
+
+		// If timeout pass go change TG to Default TG
+		if (m_timeout_time && (timeout_Watch.elapsed()> (m_timeout_time*TIME_MIN+20000U))) {
+
+			if ((not_busy) && (m_original != m_dstid)) {
+				not_busy=0;
+				LogMessage("Change TG by Timeout from TG %d to TG %d.",m_dstid,m_original);
+				m_ysfSrc = m_callsign;
+				m_srcid=m_srcHS / 100U;
+				m_ptt_dstid=m_original;
+				m_dstid=m_original;
+
+				m_ptt_pc = false;
+				m_dmrflco = FLCO_GROUP;
+				SendDummyDMR(m_srcid, m_idUnlink, m_flcoUnlink);
+				unlinkReceived = false;
+				TG_connect_state = WAITING_UNLINK;
+				TGChange.start();
+				timeout_Watch.start();
+			}
 		}
 
 		if (m_wiresX != NULL) {
@@ -382,6 +463,7 @@ int CYSF2DMR::run()
 							LogMessage("Sending PTT: Src: %s Dst: %s%d", m_ysfSrc.c_str(), m_ptt_pc ? "" : "TG ", m_ptt_dstid);
 							SendDummyDMR(m_srcid, m_ptt_dstid, m_ptt_pc ? FLCO_USER_USER : FLCO_GROUP);
 						}
+						not_busy=1;
 					}
 					break;
 				default: 
@@ -391,6 +473,7 @@ int CYSF2DMR::run()
 			if ((TG_connect_state != NONE) && (TGChange.elapsed() > 12000)) {
 				LogMessage("Timeout changing TG");
 				TG_connect_state = NONE;
+				not_busy=1;
 			}
 		}
 
@@ -410,6 +493,7 @@ int CYSF2DMR::run()
 
 					switch (status) {
 						case WXS_CONNECT:
+							not_busy=0;
 							m_srcid = findYSFID(m_ysfSrc, false);
 
 							m_ptt_dstid = m_wiresX->getDstID();
@@ -448,7 +532,7 @@ int CYSF2DMR::run()
 									break;
 							}
 
-							if (enableUnlink && (tglistOpt != 2) && (m_ptt_dstid != m_idUnlink) && (m_ptt_dstid != 5000)) {
+							if (enableUnlink && (m_ptt_dstid != m_idUnlink) && (m_ptt_dstid != 5000)) {
 								LogMessage("Sending DMR Disconnect: Src: %s Dst: %s%d", m_ysfSrc.c_str(), m_flcoUnlink == FLCO_GROUP ? "TG " : "", m_idUnlink);
 
 								SendDummyDMR(m_srcid, m_idUnlink, m_flcoUnlink);
@@ -459,12 +543,14 @@ int CYSF2DMR::run()
 								TG_connect_state = SEND_REPLY;
 
 							TGChange.start();
+							timeout_Watch.start();
 							break;
 
 						case WXS_DX:
 							break;
 
 						case WXS_DISCONNECT:
+							not_busy=0;
 							LogMessage("Disconnect has been requested by %s", m_ysfSrc.c_str());
 
 							m_srcid = findYSFID(m_ysfSrc, false);
@@ -478,6 +564,7 @@ int CYSF2DMR::run()
 							TG_connect_state = WAITING_UNLINK;
 
 							TGChange.start();
+							timeout_Watch.start();
 							break;
 
 						default:
@@ -531,7 +618,7 @@ int CYSF2DMR::run()
 
 							LogMessage("Connect to %s%d via DTMF has been requested by %s", m_ptt_pc ? "" : "TG ", m_ptt_dstid, m_ysfSrc.c_str());
 
-							if (enableUnlink && (tglistOpt != 2) && (m_ptt_dstid != m_idUnlink) && (m_ptt_dstid != 5000)) {
+							if (enableUnlink && (m_ptt_dstid != m_idUnlink) && (m_ptt_dstid != 5000)) {
 								LogMessage("Sending DMR Disconnect: Src: %s Dst: %s%d", m_ysfSrc.c_str(), m_flcoUnlink == FLCO_GROUP ? "TG " : "", m_idUnlink);
 
 								SendDummyDMR(m_srcid, m_idUnlink, m_flcoUnlink);
@@ -542,9 +629,11 @@ int CYSF2DMR::run()
 								TG_connect_state = SEND_REPLY;
 
 							TGChange.start();
+							timeout_Watch.start();
 							break;
 
 						case WXS_DISCONNECT:
+							not_busy=0;
 							LogMessage("Disconnect via DTMF has been requested by %s", m_ysfSrc.c_str());
 
 							m_srcid = findYSFID(m_ysfSrc, false);
@@ -557,6 +646,7 @@ int CYSF2DMR::run()
 
 							TG_connect_state = WAITING_UNLINK;
 							TGChange.start();
+							timeout_Watch.start();
 							break;
 
 						default:
@@ -569,7 +659,17 @@ int CYSF2DMR::run()
 
 					if (fi == YSF_FI_HEADER) {
 						if (ysfPayload.processHeaderData(buffer + 35U)) {
+							beacon_Watch.start();
+						    not_busy=0;
 							ysfWatchdog.start();
+							if (m_saveAMBE) {
+								char tmp[40];
+								sprintf(tmp, "/tmp/file%03d.amb",count_file_AMBE);
+								count_file_AMBE++;
+								file = fopen(tmp,"wb");
+								if (!file) LogMessage("Error creating AMBE file: %s",tmp);
+								else LogMessage("Recording AMBE file: %s",tmp);
+							}
 							std::string ysfSrc = ysfPayload.getSource();
 							std::string ysfDst = ysfPayload.getDest();
 							LogMessage("Received YSF Header: Src: %s Dst: %s", ysfSrc.c_str(), ysfDst.c_str());
@@ -581,7 +681,10 @@ int CYSF2DMR::run()
 							m_ysfFrames = 0U;
 						}
 					} else if (fi == YSF_FI_TERMINATOR) {
+						if (m_saveAMBE) fclose(file);
 						ysfWatchdog.stop();
+						beacon_Watch.start();
+						not_busy=1;
 						int extraFrames = (m_hangTime / 100U) - m_ysfFrames - 2U;
 						for (int i = 0U; i < extraFrames; i++)
 							m_conv.putDummyYSF();
@@ -589,6 +692,8 @@ int CYSF2DMR::run()
 						m_conv.putYSFEOT();
 						m_ysfFrames = 0U;
 					} else if (fi == YSF_FI_COMMUNICATIONS) {
+						beacon_Watch.start();
+						not_busy=0;
 						ysfWatchdog.start();
 						m_conv.putYSF(buffer + 35U);
 						m_ysfFrames++;
@@ -608,10 +713,63 @@ int CYSF2DMR::run()
 			}
 		}
 
+		if ((beacon_status != BE_OFF) && (bea_voice_Watch.elapsed() > BEACON_PER)) {
+			unsigned char buffer[40];
+			char file_name[]="/usr/local/etc/beacon.amb";
+			unsigned int n;
+
+			switch (beacon_status) {
+				case BE_INIT:
+						m_netSrc = "BEACON";
+						m_netSrc.resize(YSF_CALLSIGN_LENGTH, ' ');
+						// DT1 & DT2 without GPS info
+						::memcpy(gps_buffer, dt1_temp, 10U);
+						::memcpy(gps_buffer + 10U, dt2_temp, 10U);
+						file_out=fopen(file_name,"rb");
+						if (!file_out) {
+							LogMessage("Error opening file: %s.",file_name);
+						}
+						else {
+							LogMessage("Beacon Init: %s.",file_name);
+							//fread(buffer,4U,1U,file_out);
+							m_conv.putDMRHeader();
+							ysfWatch.start();
+							beacon_status = BE_DATA;
+						}
+						bea_voice_Watch.start();
+						break;
+
+				case BE_DATA:
+						n=fread(buffer,1U,24U,file_out);
+						if (n>23U) {
+							m_conv.AMB2YSF(buffer);
+							m_conv.AMB2YSF(buffer+8U);
+							m_conv.AMB2YSF(buffer+16U);
+						} else beacon_status = BE_EOT;
+						bea_voice_Watch.start();
+						break;
+
+				case BE_EOT:
+						if (file_out) fclose(file_out);
+						LogMessage("Beacon Out: %s.",file_name);
+						m_conv.putDMREOT();
+						beacon_Watch.start();
+						beacon_status = BE_OFF;
+						break;
+
+				case BE_OFF:
+				        break;
+				default:
+					break;
+			}
+
+		}
+
 		if (dmrWatch.elapsed() > DMR_FRAME_PER) {
 			unsigned int dmrFrameType = m_conv.getDMR(m_dmrFrame);
 
 			if(dmrFrameType == TAG_HEADER) {
+			    not_busy=0;
 				CDMRData rx_dmrdata;
 				dmr_cnt = 0U;
 
@@ -652,6 +810,7 @@ int CYSF2DMR::run()
 				dmrWatch.start();
 			}
 			else if(dmrFrameType == TAG_EOT) {
+				not_busy=1;
 				CDMRData rx_dmrdata;
 				unsigned int n_dmr = (dmr_cnt - 3U) % 6U;
 				unsigned int fill = (6U - n_dmr);
@@ -766,6 +925,7 @@ int CYSF2DMR::run()
 		}
 
 		while (m_dmrNetwork->read(tx_dmrdata) > 0U) {
+			if (beacon_status==BE_DATA) beacon_status=BE_EOT;
 			unsigned int SrcId = tx_dmrdata.getSrcId();
 			unsigned int DstId = tx_dmrdata.getDstId();
 			
@@ -823,14 +983,10 @@ int CYSF2DMR::run()
 						int lat, lon, resp;
 						resp = m_APRS->findCall(m_netSrc, &lat, &lon);
 
-						//LogMessage("Searching GPS Position of %s in aprs.fi", m_netSrc.c_str());
-
 						if (resp) {
 							LogMessage("GPS Position of %s Lat: %0.3f, Lon: %0.3f", m_netSrc.c_str(), (float)lat / 1000.0, (float)lon / 1000.0);
 							m_APRS->formatGPS(gps_buffer, lat, lon);
 						}
-						// else
-						//	LogMessage("GPS Position not available");
 					}
 
 					m_netSrc.resize(YSF_CALLSIGN_LENGTH, ' ');
@@ -866,14 +1022,11 @@ int CYSF2DMR::run()
 							int lat, lon, resp;
 							resp = m_APRS->findCall(m_netSrc, &lat, &lon);
 
-							//LogMessage("Searching GPS Position of %s in aprs.fi", m_netSrc.c_str());
-
 							if (resp) {
 								LogMessage("GPS Position of %s Lat: %0.3f, Lon: %0.3f", m_netSrc.c_str(), (float)lat / 1000.0, (float)lon / 1000.0);
 								m_APRS->formatGPS(gps_buffer, lat, lon);
 							}
-							// else
-							//	LogMessage("GPS Position not available");
+
 						}
 
 						m_netSrc.resize(YSF_CALLSIGN_LENGTH, ' ');
@@ -911,6 +1064,7 @@ int CYSF2DMR::run()
 			unsigned int ysfFrameType = m_conv.getYSF(m_ysfFrame + 35U);
 
 			if(ysfFrameType == TAG_HEADER) {
+				not_busy=0;
 				ysf_cnt = 0U;
 
 				::memcpy(m_ysfFrame + 0U, "YSFD", 4U);
@@ -1130,16 +1284,20 @@ void CYSF2DMR::createGPS()
 	std::string password = m_conf.getAPRSPassword();
 	std::string callsign = m_conf.getAPRSCallsign();
 	std::string desc     = m_conf.getAPRSDescription();
-
-	if (callsign.empty())
-		callsign = m_callsign;
+	std::string icon        = m_conf.getAPRSIcon();
+	std::string beacon_text = m_conf.getAPRSBeaconText();
+	bool followMode			= m_conf.getAPRSFollowMe();
 
 	LogMessage("APRS Parameters");
 	LogMessage("    Callsign: %s", callsign.c_str());
+	LogMessage("    Node Callsign: %s", m_callsign.c_str());
 	LogMessage("    Server: %s", hostname.c_str());
 	LogMessage("    Port: %u", port);
 	LogMessage("    Passworwd: %s", password.c_str());
 	LogMessage("    Description: %s", desc.c_str());
+	LogMessage("    Icon: %s", icon.c_str());
+	LogMessage("    Beacon Text: %s", beacon_text.c_str());
+	LogMessage("    Follow Mode: %s", followMode ? "yes" : "no");
 
 	m_gps = new CGPS(callsign, m_suffix, password, hostname, port);
 
@@ -1148,6 +1306,7 @@ void CYSF2DMR::createGPS()
 	float latitude           = m_conf.getLatitude();
 	float longitude          = m_conf.getLongitude();
 	int height               = m_conf.getHeight();
+	int beacon_time			 = m_conf.getAPRSBeaconTime();
 
 	m_gps->setInfo(txFrequency, rxFrequency, latitude, longitude, height, desc);
 
@@ -1250,13 +1409,7 @@ unsigned int CYSF2DMR::findYSFID(std::string cs, bool showdst)
 	else if (m_dmrflco == FLCO_GROUP)
 		dmrpc = false;
 
-	if (id == 0) {
-		id = m_defsrcid;
-		if (showdst)
-			LogMessage("Not DMR ID found, using default ID: %u, DstID: %s%u", id, dmrpc ? "" : "TG ", m_dstid);
-		else
-			LogMessage("Not DMR ID found, using default ID: %u", id);
-	}
+	if (id == 0) LogMessage("Not DMR ID found, drooping voice data.");
 	else {
 		if (showdst)
 			LogMessage("DMR ID of %s: %u, DstID: %s%u", cstrim.c_str(), id, dmrpc ? "" : "TG ", m_dstid);
@@ -1303,8 +1456,16 @@ bool CYSF2DMR::createDMRNetwork()
 	m_enableWiresX = m_conf.getEnableWiresX();
 
 	if (m_xlxmodule.empty()) {
-		m_dstid = m_conf.getDMRDstId();
-		m_dmrpc = m_conf.getDMRPC();
+		m_dstid = getTg(m_srcHS);
+		if (m_dstid==0) {
+			m_tgConnected=false;
+			m_dstid = m_conf.getDMRDstId();
+			m_dmrpc = m_conf.getDMRPC();
+		}
+		else {
+			m_tgConnected=true;
+			m_dmrpc = m_conf.getDMRPC();
+		}
 	}
 	else {
 		const char *xlxmod = m_xlxmodule.c_str();
@@ -1383,7 +1544,7 @@ bool CYSF2DMR::createDMRNetwork()
 	LogMessage("    Description: \"%s\"", description.c_str());
 	LogMessage("    URL: \"%s\"", url.c_str());
 
-	m_dmrNetwork->setConfig(m_callsign, rxFrequency, txFrequency, power, m_colorcode, latitude, longitude, height, location, description, url);
+	m_dmrNetwork->setConfig(m_callsign, rxFrequency, txFrequency, power, m_colorcode, 999U, 999U, height, location, description, url);
 
 	bool ret = m_dmrNetwork->open();
 	if (!ret) {
@@ -1395,6 +1556,76 @@ bool CYSF2DMR::createDMRNetwork()
 	m_dmrNetwork->enable(true);
 
 	return true;
+}
+
+int CYSF2DMR::getTg(int m_srcHS){
+	int api_tg=0;
+	int nDataLength;
+	const unsigned int TIMEOUT = 10U;
+	const unsigned int BUF_SIZE = 1024U;
+	unsigned char *buffer;
+
+	buffer = (unsigned char *) malloc(BUF_SIZE);
+	if (!buffer) {
+		LogMessage("Get_TG: Could not allocate memory.");
+		return 0U;
+	}
+
+	std::string url = "/v1.0/repeater/?action=PROFILE&q=" + std::to_string(m_srcHS);
+	std::string get_http = "GET " + url + " HTTP/1.1\r\nHost: api.brandmeister.network\r\nUser-Agent: YSF2DMR/0.12\r\n\r\n";
+
+	CTCPSocket sockfd("api.brandmeister.network", 80);
+
+	bool ret = sockfd.open();
+	if (!ret){
+		LogMessage("Get_TG: Could not connect to API.");
+		return 0;
+	}
+
+	sockfd.write((const unsigned char*)get_http.c_str(), strlen(get_http.c_str()));
+	while ((nDataLength = sockfd.read(buffer, BUF_SIZE, TIMEOUT)) > 0){
+		int i,j;
+		char tmp_str[20];
+		for (i = 0; i < nDataLength; i++) {
+			if (buffer[i] == 'o') {
+				if ((i+1)>nDataLength) {nDataLength = sockfd.read(buffer, BUF_SIZE, TIMEOUT);i=0;}
+				else i++;
+				if (buffer[i] == 'u') {
+					if ((i+1)>nDataLength) {nDataLength = sockfd.read(buffer, BUF_SIZE, TIMEOUT);i=0;}
+					else i++;
+					if (buffer[i] == 'p') {
+						if ((i+1)>nDataLength) {nDataLength = sockfd.read(buffer, BUF_SIZE, TIMEOUT);i=0;}
+						else i++;
+						if (buffer[i] == '\"') {
+							if ((i+1)>nDataLength) {nDataLength = sockfd.read(buffer, BUF_SIZE, TIMEOUT);i=0;}
+							else i++;
+							if (buffer[i] == ':') {
+								i++;
+								if ((i+8)>nDataLength) {
+									int tmp=nDataLength-i;
+									::memcpy(tmp_str, buffer + i, tmp);
+									LogMessage("Reading inside");
+									nDataLength = sockfd.read(buffer, BUF_SIZE, TIMEOUT);
+									i=0;
+									::memcpy(tmp_str+tmp, buffer, 8-tmp);
+								}
+								else ::memcpy(tmp_str, buffer + i, 8U);
+
+								for (j=0;j<8;j++) if (tmp_str[j]==',') tmp_str[j]=0;
+								tmp_str[8] = 0;
+								api_tg=atoi(tmp_str);
+								break;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	sockfd.close();
+	free(buffer);
+	return api_tg;
 }
 
 void CYSF2DMR::writeXLXLink(unsigned int srcId, unsigned int dstId, CDMRNetwork* network)

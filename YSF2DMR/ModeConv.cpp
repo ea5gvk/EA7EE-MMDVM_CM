@@ -2,6 +2,7 @@
  *   Copyright (C) 2010,2014,2016 and 2018 by Jonathan Naylor G4KLX
  *   Copyright (C) 2016 Mathias Weyland, HB9FRV
  *   Copyright (C) 2018 by Andy Uribe CA6JAU
+ *   Copyright (C) 2019 by Manuel Sanchez EA7EE
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -537,12 +538,108 @@ void CModeConv::putDMR(unsigned char* bytes)
 	putAMBE2YSF(a3, b3, c3);
 }
 
+void CModeConv::AMB2YSF(unsigned char * bytes){
+
+	unsigned char vch[13U];
+	unsigned char ysfFrame[13U];
+	::memset(vch, 0U, 13U);
+	::memset(ysfFrame, 0, 13U);
+	unsigned int dat_a,dat_b,dat_c,tmp,tmp1;
+
+	dat_a=((((unsigned int)bytes[1])<<4)|(((unsigned int)bytes[2]>>4)&0x0F));
+	dat_b=((((unsigned int)(bytes[2]&0x0F))<<8)|((unsigned int)bytes[3]));
+	tmp=bytes[4];
+	tmp=tmp<<17;
+	tmp1=bytes[5];
+	tmp1=tmp1<<9;
+	tmp=tmp|tmp1;
+	tmp1=bytes[6];
+	tmp1=tmp1<<1;
+	tmp=tmp|tmp1;
+    dat_c=tmp|(bytes[7]&0x01);
+
+	for (unsigned int i = 0U; i < 12U; i++) {
+		bool s = (dat_a << (20U + i)) & 0x80000000U;
+		WRITE_BIT(vch, 3*i + 0U, s);
+		WRITE_BIT(vch, 3*i + 1U, s);
+		WRITE_BIT(vch, 3*i + 2U, s);
+	}
+
+	for (unsigned int i = 0U; i < 12U; i++) {
+		bool s = (dat_b << (20U + i)) & 0x80000000U;
+		WRITE_BIT(vch, 3*(i + 12U) + 0U, s);
+		WRITE_BIT(vch, 3*(i + 12U) + 1U, s);
+		WRITE_BIT(vch, 3*(i + 12U) + 2U, s);
+	}
+
+	for (unsigned int i = 0U; i < 3U; i++) {
+		bool s = (dat_c << (7U + i)) & 0x80000000U;
+		WRITE_BIT(vch, 3*(i + 24U) + 0U, s);
+		WRITE_BIT(vch, 3*(i + 24U) + 1U, s);
+		WRITE_BIT(vch, 3*(i + 24U) + 2U, s);
+	}
+
+	for (unsigned int i = 0U; i < 22U; i++) {
+		bool s = (dat_c << (10U + i)) & 0x80000000U;
+		WRITE_BIT(vch, i + 81U, s);
+	}
+
+	WRITE_BIT(vch, 103U, 0U);
+
+	// Scramble
+	for (unsigned int i = 0U; i < 13U; i++)
+		vch[i] ^= WHITENING_DATA[i];
+
+	// Interleave
+	for (unsigned int i = 0U; i < 104U; i++) {
+		unsigned int n = INTERLEAVE_TABLE_26_4[i];
+		bool s = READ_BIT(vch, i);
+		WRITE_BIT(ysfFrame, n, s);
+	}
+
+	m_YSF.addData(&TAG_DATA, 1U);
+	m_YSF.addData(ysfFrame, 13U);
+	//CUtils::dump(1U, "VCH V/D type 2:", ysfFrame, 13U);
+
+	m_ysfN += 1U;
+}
+
 void CModeConv::putAMBE2YSF(unsigned int a, unsigned int b, unsigned int dat_c)
 {
 	unsigned char vch[13U];
 	unsigned char ysfFrame[13U];
 	::memset(vch, 0U, 13U);
 	::memset(ysfFrame, 0, 13U);
+
+	// AMBE adjust
+
+	int b0=0;
+	b0|=(a & 0x00800000) ? 0x40 : 0x00;
+	b0|=(a & 0x00400000) ? 0x20 : 0x00;
+	b0|=(a & 0x00200000) ? 0x10 : 0x00;
+	b0|=(a & 0x00100000) ? 0x08 : 0x00;
+	b0|=(dat_c & 0x0800) ? 0x04 : 0x00;
+	b0|=(dat_c & 0x0400) ? 0x02 : 0x00;
+	b0|=(dat_c & 0x0200) ? 0x01 : 0x00;
+
+
+	if ((b0<120) || (b0>127) || (b0==124) || (b0==125)) {
+
+		unsigned char gain=0;
+		gain|=(a & 0x00008000) ? 0x10 : 0x00;
+		gain|=(a & 0x00004000) ? 0x08 : 0x00;
+		gain|=(a & 0x00002000) ? 0x04 : 0x00;
+		gain|=(a & 0x00001000) ? 0x02 : 0x00;
+		gain|=(dat_c & 0x1000) ? 0x01 : 0x00;
+
+		gain=m_ctable[gain];
+
+		if (gain&0x10) a|=0x00008000; else a&=0xFFFF7FFF;
+		if (gain&0x08) a|=0x00004000; else a&=0xFFFFBFFF;
+		if (gain&0x04) a|=0x00002000; else a&=0xFFFFDFFF;
+		if (gain&0x02) a|=0x00001000; else a&=0xFFFFEFFF;
+		if (gain&0x01) dat_c|=0x00001000; else dat_c&=0xFFFFEFFF;
+	}
 
 	unsigned int dat_a = a >> 12;
 
@@ -597,13 +694,15 @@ void CModeConv::putAMBE2YSF(unsigned int a, unsigned int b, unsigned int dat_c)
 	m_ysfN += 1U;
 }
 
-void CModeConv::putYSF(unsigned char* data)
+void CModeConv::putYSF(unsigned char* data, FILE *file)
 {
 	assert(data != NULL);
 
 	data += YSF_SYNC_LENGTH_BYTES + YSF_FICH_LENGTH_BYTES;
 
 	unsigned int offset = 40U; // DCH(0)
+    unsigned char buf[40];
+	unsigned char pos=0;
 
 	// We have a total of 5 VCH sections, iterate through each
 	for (unsigned int j = 0U; j < 5U; j++, offset += 144U) {
@@ -648,7 +747,23 @@ void CModeConv::putYSF(unsigned char* data)
 				dat_c |= 0x01U;;
 		}
 		
+		buf[pos]=0U;
+		buf[pos+1]=(unsigned char)(dat_a>>4);
+		unsigned char tmp=(unsigned char)((dat_a<<4)&0xF0);
+		tmp=tmp|(unsigned char)((dat_b>>8)&0x0F);
+        buf[pos+2]=tmp;
+        buf[pos+3]=(unsigned char)(dat_b&0xFF);
+        buf[pos+4]=(unsigned char)((dat_c&0x1FE0000)>>17);
+        buf[pos+5]=(unsigned char)((dat_c&0x1FE00)>>9);
+        buf[pos+6]=(unsigned char)((dat_c&0x1FE)>>1);
+		buf[pos+7]=(unsigned char) (dat_c&0x01);
+		pos+=8;
+
 		putAMBE2DMR(dat_a, dat_b, dat_c);
+	}
+    if (file) {
+		fwrite(buf,40U,1U,file);
+		//CUtils::dump(1U, "VCH V/D type 2:", buf, 40U);
 	}
 }
 
@@ -847,4 +962,44 @@ unsigned int CModeConv::getYSF(unsigned char* data)
 	}
 	else
 		return TAG_NODATA;
+}
+
+void CModeConv::LoadTable(unsigned int levelA, unsigned int levelB)
+{
+	int level_a,level_b;
+	unsigned char i;
+	float pte;
+
+	if ((levelA ==0)  || (levelB == 0)) {
+		LogMessage("Loading plain table");
+		for (i=0;i<32;i++) m_ctable[i]=i;
+		return;
+	}
+
+	if (levelA>15) levelA=15;
+	else if (levelA<0) levelA=0;
+	if (levelB>15) levelB=15;
+	else if (levelB<0) levelB=0;
+
+	level_a=32-levelA;
+	level_b=32-levelA-levelB;
+
+	LogMessage("AMBE Table Values: ");
+
+	for (i=0;i<level_b;i++) m_ctable[i]=i;
+
+	pte=((float)(level_a-level_b))/(31-level_b);
+	for (i=level_b;i<32;i++) {
+		m_ctable[i]=ceil(((i-level_b)*pte)+level_b);
+	}
+	char final_str[80];
+	char tmp_str[20];
+	strcpy(final_str,"AMBE Compression Table: ";)
+	for (i=0;i<31;i++) {
+		sprintf(tmp_str,"%d, ",m_ctable[i])
+		strcat(str_tmp,tmp_str);
+	}
+	sprintf(tmp_str,"%d.",m_ctable[31])
+	strcat(final,str,str_tmp);
+	LogMessage(final_str);
 }

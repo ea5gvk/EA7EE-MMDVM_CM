@@ -1,6 +1,6 @@
 /*
 *   Copyright (C) 2016,2017 by Jonathan Naylor G4KLX
-*   Copyright (C) 2018 by Manuel Sanchez EA7EE
+*   Copyright (C) 2019 by Manuel Sanchez EA7EE
 *   Copyright (C) 2018 by Andy Uribe CA6JAU
 *
 *   This program is free software; you can redistribute it and/or modify
@@ -30,7 +30,7 @@ public:
 	CGPS(const std::string& callsign, const std::string& suffix, const std::string& password, const std::string& address, unsigned int port);
 	~CGPS();
 
-	void setInfo(unsigned int txFrequency, unsigned int rxFrequency, float latitude, float longitude, int height, const std::string& desc);
+	void setInfo(unsigned int txFrequency, unsigned int rxFrequency, float latitude, float longitude, int height, const std::string& desc, const std::string& icon, const std::string& beacon_text, int beacon_time, bool follow);
 
 	bool open();
 

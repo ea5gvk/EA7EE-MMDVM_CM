@@ -1,6 +1,6 @@
 /*
  *   Copyright (C) 2010-2014,2016 by Jonathan Naylor G4KLX
- *   Copyright (C) 2018 by Manuel Sanchez EA7EE
+ *   Copyright (C) 2019 by Manuel Sanchez EA7EE
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -174,8 +174,8 @@ void CAPRSWriterThread::write(const char* data)
 {
 	assert(data != NULL);
 
-	if (!m_connected)
-		return;
+	//if (!m_connected)
+	//	return;
 
 	unsigned int len = ::strlen(data);
 
