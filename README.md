@@ -346,3 +346,7 @@ It is important to note that this compression artifacts only takes place on over
 AMBECompA=4
 AMBECompB=3
 ```
+
+# Acknowledgments
+I want to thank many many hams who have spent a lot of time to improve the system. I thank specificaly EA5GVK for having done many tutorials to test early versions of YSF2DMR that I use here. I thank Andy and Jonathan for their tireless work to make MMDVM one great and complete piece of code for amateur radio.
+
