@@ -145,7 +145,7 @@ There are information sent to the DMR Master Server to show in web pages. Exampl
 Power=1
 Height=0
 ```
-##[YSF Network]
+## [YSF Network]
 This section configures C4FM connection with the mmdvmhost program
 ### Suffix
 You can add a suffix to the C4FM callsign show on the Yaesu Transceiver, but this option is not used in the updated YSF2DMR, so please leave it blank. Example:
@@ -244,7 +244,7 @@ Password="passw0rd"
 Port=62031
 ```
 
-##[DMR Id Lookup]
+## [DMR Id Lookup]
 This section fix the location and update time for the master DMR ID Database. For C4FM this database is very important. The callsign will be extracted from the Id that Master Server send to us and then sent to the Yaesu transceiver in Callsign Format.
 ### File
 This is the location of the database file. The crontab task will update this file in this location, so please don't change. Example:
