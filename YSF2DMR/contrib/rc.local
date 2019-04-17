@@ -1,0 +1,53 @@
+#!/bin/sh -e
+#
+# rc.local
+#
+# This script is executed at the end of each multiuser runlevel.
+# Make sure that the script will "exit 0" on success or any other
+# value on error.
+#
+# In order to enable or disable this script just change the execution
+# bits.
+#
+# By default this script does nothing.
+
+# AutoGenerate SSH keys if they are missing
+if [ ! -f /etc/ssh/ssh_host_rsa_key ] || [ ! -f /etc/ssh/ssh_host_dsa_key ]; then
+	mount -o remount,rw /
+	dpkg-reconfigure openssh-server
+fi
+
+# Pull in the Config settings from /boot if they exist there
+if [ -f /boot/Pi-Star_Config_*.zip ]; then
+	/usr/local/sbin/pistar-bootconfig.sh
+	exit 0
+fi
+
+# Pull in the WiFi settings from /boot if they exist there
+if [ -f /boot/wpa_supplicant.conf ]; then
+        mount -o remount,rw /boot
+        mount -o remount,rw /
+        mv /boot/wpa_supplicant.conf /etc/wpa_supplicant/wpa_supplicant.conf
+        wpa_cli reconfigure wlan0
+        reboot
+	exit 0
+fi
+
+# Print the IP address
+_IP=$(hostname -I) || true
+if [ "$_IP" ]; then
+  printf "My IP address is %s\n" "$_IP"
+fi
+
+# Update the Kernel version in /etc/pistar-release
+_KernelVer=`uname -r`
+_MMDVMHostVer=`MMDVMHost -v | awk '{ print $3 }'`
+mount -o remount,rw /
+sed -i "/kernel/c kernel = $_KernelVer" /etc/pistar-release
+sed -i "/MMDVMHost/c MMDVMHost = $_MMDVMHostVer" /etc/pistar-release
+cp -R /var/www/dashboard/news /tmp
+sleep 30
+updateDMRIDs.sh
+mount -o remount,ro /
+
+exit 0

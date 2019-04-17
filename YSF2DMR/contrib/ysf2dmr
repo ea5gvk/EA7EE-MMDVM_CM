@@ -1,0 +1,71 @@
+[Info]
+RXFrequency=438800000
+TXFrequency=438800000
+Power=1
+Latitude=50.0
+Longitude=0.0
+Height=0
+Location=A Town, L0C4T0R
+Description=Country, UK
+URL=http://www.mw0mwz.co.uk/pi-star/
+
+[YSF Network]
+Callsign=M1ABC
+Suffix=
+DstAddress=127.0.0.1
+DstPort=42000
+LocalAddress=127.0.0.1
+LocalPort=42013
+EnableWiresX=1
+Daemon=1
+
+[Enabled]
+Enabled=0
+
+[DMR Network]
+Id=0
+StartupDstId=31672
+StartupPC=0
+Jitter=500
+Debug=0
+EnableUnlink=1
+TGUnlink=4000
+PCUnlink=0
+TGListFile=/usr/local/etc/TGList.txt
+Address=87.117.229.173
+Password=passw0rd
+Port=62031
+Local=62032
+
+[DMR Id Lookup]
+File=/usr/local/etc/DMRIds.dat
+Time=720
+
+[Log]
+DisplayLevel=0
+FileLevel=1
+FilePath=/var/log/pi-star
+FileRoot=YSF2DMR
+
+[aprs.fi]
+AprsCallsign=M1ABC
+HotSpotFollow=0
+Icon=YY
+Beacon=YSF2DMR Public HotSpot
+BeaconTime=20
+Server=euro.aprs2.net
+Password=0
+APIKey=0
+Description=M1ABC_Pi-Star
+Enable=1
+Port=14580
+Refresh=4
+
+[Storage]
+TimeoutTime=0
+BeaconTime=10
+SaveAMBE=0
+TGReload=60
+AMBECompA=4
+AMBECompB=3
+
