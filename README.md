@@ -24,7 +24,7 @@ This software is licensed under the GPL v3 and is intended for amateur and educa
 
 # How to get the source and compile the program right inside the Rasperry Pi pi-star distribution.
 
-You can connect via SSH to the board running last pi-star version. Then you can download the source code and compile and install the updated YSF2DMR program. To do so, you can do:
+You must use the last BETA version for it to work. You must connect via SSH to the board running pi-star. Then you can download the source code and compile and install the updated YSF2DMR program. To do so, you can do:
 ```
 rpi-rw
 sudo su
