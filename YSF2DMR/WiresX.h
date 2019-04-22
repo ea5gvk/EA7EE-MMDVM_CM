@@ -177,6 +177,7 @@ private:
 
 	void sendDXReply();
 	void sendAllReply();
+	void sendLocalNewsReply();
 	void sendNewsReply();
 	void sendSearchReply();
 	void sendSearchNotFoundReply();
