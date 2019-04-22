@@ -32,7 +32,11 @@ install:
 		cp ./contrib/spanish_es.php /var/www/dashboard/lang
 		cp ./contrib/TGList.txt /usr/local/etc
 		cp ./contrib/updateDMRIDs.sh /usr/local/bin
+		chmod a+x /usr/local/bin/updateDMRIDs.sh		
 		cp ./contrib/updateTGList.sh /usr/local/bin
+		chmod a+x /usr/local/bin/updateTGList.sh		
+		cp ./contrib/update_news.sh /usr/local/bin
+ 		chmod a+x /usr/local/bin/update_news.sh		
 		cp ./contrib/ysf2dmr /etc
 		cp ./contrib/rc.local /etc
 		cp ./contrib/crontab /etc
@@ -40,4 +44,6 @@ install:
 		mv /usr/local/bin/MMDVMHost /usr/local/bin/MMDVMHost.first
 		cp ./contrib/MMDVMHost /usr/local/bin
 		chmod a+x /usr/local/bin/MMDVMHost
+		/usr/local/bin/updateDMRIDs.sh
+		/usr/local/bin/updateTGList.sh
 		
