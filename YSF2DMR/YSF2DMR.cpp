@@ -261,19 +261,19 @@ int CYSF2DMR::run()
 	m_remoteGateway = m_conf.getRemoteGateway();
 	m_hangTime = m_conf.getHangTime();
 
-	m_saveAMBE				 = m_conf.getSaveAMBE();
+	m_saveAMBE		 = m_conf.getSaveAMBE();
 	bool debug               = m_conf.getDMRNetworkDebug();
 	in_addr dstAddress       = CUDPSocket::lookup(m_conf.getDstAddress());
 	unsigned int dstPort     = m_conf.getDstPort();
 	std::string localAddress = m_conf.getLocalAddress();
 	unsigned int localPort   = m_conf.getLocalPort();
-	m_saveAMBE				 = m_conf.getSaveAMBE();
+	m_saveAMBE		 = m_conf.getSaveAMBE();
 
 	// Get timeout and beacon times from Conf.cpp
 	unsigned int m_timeout_time = m_conf.getTimeoutTime();
 	unsigned int m_beacon_time = m_conf.getBeaconTime();
 	unsigned int reloadTime = m_conf.getDMRIdLookupTime();
-    unsigned int tglist_reload = m_conf.getTGListReload();
+        unsigned int tglist_reload = m_conf.getTGListReload();
 
 	std::string fileName    = m_conf.getDMRXLXFile();
 	m_xlxReflectors = new CReflectors(fileName, 60U);
@@ -286,8 +286,8 @@ int CYSF2DMR::run()
 	LogInfo("    Timeout TG Time: %d min", m_timeout_time);
 	LogInfo("    Beacon Time %d min", m_beacon_time);
 	LogInfo("    AMBE Recording: %s", m_saveAMBE ? "yes" : "no");
-    LogInfo("    TG List Reload Time: %d min", tglist_reload);
-    LogInfo("    DMR Callsign List Reload Time: %d min", reloadTime);
+        LogInfo("    TG List Reload Time: %d min", tglist_reload);
+        LogInfo("    DMR Callsign List Reload Time: %d min", reloadTime);
 	LogInfo("    Remote Gateway: %s", m_remoteGateway ? "yes" : "no");
 	LogInfo("    Hang Time: %u ms", m_hangTime);
 
@@ -336,7 +336,6 @@ int CYSF2DMR::run()
 	std::string name = m_conf.getDescription();
 	unsigned int rxFrequency = m_conf.getRxFrequency();
 	unsigned int txFrequency = m_conf.getTxFrequency();
-	int reflector = m_conf.getDMRDstId();
 
 	if (m_wiresX != NULL)
 		m_wiresX->setInfo(name, txFrequency, rxFrequency, reflector);
@@ -382,6 +381,8 @@ int CYSF2DMR::run()
 
 	BE_STATUS beacon_status;
 	beacon_status = BE_OFF;
+    	bool first_time = true;
+	bool first_time_b = true;	
 
 	for (; end == 0;) {
 		unsigned char buffer[2000U];
@@ -391,16 +392,26 @@ int CYSF2DMR::run()
 
 		// TG Connection safe process at init
 		// To unlink old dynamic TG
-		if (m_dmrNetwork->isConnected() ) {
+		if (first_time && m_dmrNetwork->isConnected()) {
 			if (!m_tgConnected){
-				m_srcid=m_srcHS / 100U;
-				SendDummyDMR(m_srcid, m_idUnlink, m_flcoUnlink);
-				m_ptt_dstid=m_dstid;
-				unlinkReceived = false;
-				TG_connect_state = WAITING_UNLINK;
+				if (m_srcHS>9999999U) m_srcid = m_srcHS / 100U;
+				else m_srcid=m_srcHS;	
+				if (enableUnlink) {
+					SendDummyDMR(m_srcid, m_idUnlink, m_flcoUnlink);
+					m_ptt_dstid=m_dstid;
+					unlinkReceived = false;
+					TG_connect_state = WAITING_UNLINK;
+					m_tgConnected = true;
+					TGChange.start();					
+				} else {
+					SendDummyDMR(m_srcid, m_dstid, m_dmrflco);				
+				}
 				m_tgConnected = true;
 				LogMessage("Initial linking to TG %d.", m_dstid);
-				TGChange.start();
+
+			} else {
+				LogMessage("Connecting to TG %d.", m_dstid);
+				SendDummyDMR(m_srcid, m_dstid, m_dmrflco);
 			}
 
 			if (!m_xlxmodule.empty() && !m_xlxConnected) {
@@ -408,14 +419,16 @@ int CYSF2DMR::run()
 				LogMessage("XLX, Linking to reflector XLX%03u, module %s", m_xlxrefl, m_xlxmodule.c_str());
 				m_xlxConnected = true;
 			}
+			first_time = false;
 		}
 
 		// If Beacon time start voice beacon transmit
-		if (m_beacon_time && not_busy && (beacon_Watch.elapsed()> (m_beacon_time*TIME_MIN))) {
+		if (first_time_b || (m_beacon_time && not_busy && (beacon_Watch.elapsed()> (m_beacon_time*TIME_MIN)))) {
 			not_busy=0;
 			beacon_status = BE_INIT;
 			bea_voice_Watch.start();
 			beacon_Watch.start();
+			first_time_b = false;			
 		}
 
 		// If timeout pass go change TG to Default TG
@@ -425,7 +438,8 @@ int CYSF2DMR::run()
 				not_busy=0;
 				LogMessage("Change TG by Timeout from TG %d to TG %d.",m_dstid,m_original);
 				m_ysfSrc = m_callsign;
-				m_srcid=m_srcHS / 100U;
+				if (m_srcHS>9999999U) m_srcid = m_srcHS / 100U;
+				else m_srcid=m_srcHS;
 				m_ptt_dstid=m_original;
 				m_dstid=m_original;
 
