@@ -1447,7 +1447,7 @@ void CWiresX::sendGetMessageReply()
 		data[offset + 0U] = 0x03U;			// End of data marker
 		data[offset + 1U] = CCRC::addCRC(data, offset + 1U);
 
-		CUtils::dump("Picture Preamble Reply", data, offset + 2U);
+		CUtils::dump("First Picture Preamble Reply", data, offset + 2U);
 		m_seqNo+=3;
 
 		createReply(data, offset + 2U, m_source.c_str());
@@ -1479,7 +1479,7 @@ void CWiresX::sendPictureBegin()
 	data[offset + 0U] = 0x03U;			// End of data marker
 	data[offset + 1U] = CCRC::addCRC(data, offset + 1U);
 
-	CUtils::dump("Picture Preamble Reply", data, offset + 2U);
+	CUtils::dump("Second Picture Preamble Reply", data, offset + 2U);
 	m_seqNo++;
 
 	createReply(data, offset + 2U, m_source.c_str());	
