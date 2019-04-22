@@ -326,6 +326,7 @@ int CYSF2DMR::run()
 	// CWiresX Control Object
 	if (m_enableWiresX) {
 		bool makeUpper = m_conf.getWiresXMakeUpper();
+		m_storage = new CWiresXStorage;				
 		m_wiresX = new CWiresX(m_callsign, m_suffix, m_ysfNetwork, m_TGList, makeUpper, tglist_reload);
 		m_dtmf = new CDTMF;
 
