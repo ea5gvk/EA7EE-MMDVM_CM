@@ -36,7 +36,7 @@ install:
 		cp ./contrib/updateTGList.sh /usr/local/bin
 		chmod a+x /usr/local/bin/updateTGList.sh		
 		cp ./contrib/update_news.sh /usr/local/bin
- 		chmod a+x /usr/local/bin/update_news.sh		
+		chmod a+x /usr/local/bin/update_news.sh		
 		cp ./contrib/ysf2dmr /etc
 		cp ./contrib/rc.local /etc
 		cp ./contrib/crontab /etc
