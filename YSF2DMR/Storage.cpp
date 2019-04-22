@@ -360,13 +360,14 @@ unsigned int CWiresXStorage::GetMessage(unsigned char *data,unsigned int number,
 		//SUBJECT
 		::memcpy(data+68U,record+66U,16U); */
 		
-		char from[6]="21421";
+		//char from[6]="21421";
 		//char call[11]="**********";
-        	strcpy(tmp,"01");		
+        	char tmp1[3];
+		strcpy(tmp1,"01");		
 		
-		::memcpy(data+5U,tmp,2U);
+		::memcpy(data+5U,tmp1,2U);
 		//01
-		::memcpy(data+7U,from,5U);
+		::memcpy(data+7U,tmp,5U);
 		//ID
 		::memset(data+12U,0x20,5U);
 		//NUMBER
