@@ -14,13 +14,13 @@ In this fork I will only work on the YSF2DMR branch to obtain WiresX repeaters s
 - Define Icon and message of Node sent to ARPS-IS (done & uploaded)
 - Use GM button from Yaesu Equipment to put repeating beacon directly to APRS-IS (done & uploaded)
 - Display number of nodes connected to master server TG on Wires-X connect info (done & uploaded)
-- Store WiresX SMS and Photo on Node for later retrieval (working on it)
+- Store WiresX SMS and Photo on Node for later retrieval (done & uploaded, testing)
 - Send WiresX SMS to email and Telegram and back (working on it)
 - Send WiresX Photo to email and Telegram and back (working on it)
 
 Please be patient, I will upload my code on the repository as soon as possible and will mark those functions uploaded.
 
-This software is licensed under the GPL v2 and is intended for amateur and educational use only. Use of this software for commercial purposes is strictly forbidden.
+This software is licensed under the GPL v3 and is intended for amateur and educational use only. Use of this software for commercial purposes is strictly forbidden.
 
 # How to get the source and compile the program right inside the Rasperry Pi pi-star distribution.
 
@@ -33,55 +33,11 @@ mkdir opt
 git clone https://github.com/msraya/MMDVM_CM.git
 cd MMDVM_CM/YSF2DMR
 make
-mv /usr/local/bin/YSF2DMR /usr/local/bin/YSF2DMR.old
-cp ./YSF2DMR /usr/local/bin/YSF2DMR
+make install
 ```
-Then you should understand the ysf2dmr options explained below and go to edit the /etc/ysf2dmr file, and then reload the program:
-```
-systemctl restart ysf2dmr
-```
-Your can see the info in the log file /var/log/pi-star/YSF2DMR.....
+Then you can configure it on the pi-star dashboard only selecting EA7EE YSF2DMR mode. It's all.
 
-# How to fully integrate YSF2DMR in Pi-Star image
-
-Firstly, you must configure pi-star through the web UI to work with C4FM (YSFGateway) and YSF2DMR as usual. Remember that if you change anything directly in the mmdvmhost or ysf2dmr configuration files and then You change any setting on the web UI you will lost the manual file configuration changes. So I advice you only to use the PI-STAR Web UI at the very beginning.
-
-Unfortunately, pi-star image relies on YSFGateway to make YSF2DMR work. So, you cannot use extended features of YSF2DMR as change TG and auto APRS GM Beacon. But don't worry, you can bypass YSFGateway easily so you can use YSF2DMR to the fullest potential.
-
-To do so, you must edit the configuration file for mmdvmhost program. Go to edit /etc/mmdvmhost keying "sudo nano /etc/mmdvmhost" and change the two lines:
-```
-[System Fusion Network]
-Enable=1
-LocalAddress=127.0.0.1
-LocalPort=3200   --->> change to 42000
-GatewayAddress=127.0.0.1
-GatewayPort=4200 --->> change to 42013
-# ModeHang=3
-Debug=0
-```
-Then, in the ysf2dmr configuration file, we will use these ports so both programs can communicate. Below I will comment all the ysf2dmr options with detail.
-
-Also, you should disable all others modes as DMR or DSTAR so they do not start up in the bad moment.
-In my image I also disable YSFGateway and YSFParrot with:
-```
-sudo systemctl stop YSFGateway
-sudo systemctl disable YSFGateway
-sudo systemctl stop YSFGateway.timer
-sudo systemctl disable YSFGatway.timer
-sudo systemctl stop YSFParrot
-sudo systemctl disable YSFParrot
-```
-and also I advice you to rename program files under /usr/local/bin as YSFGateway and YSFParrot to YSFGateway.old and YSFParrot.old so they don't run by accident.  
-```
-sudo mv /usr/local/bin/YSFGateway /usr/local/bin/YSFGateway.old
-sudo mv /usr/local/bin/YSFParrot /usr/local/bin/YSFParrot.old
-``` 
-Then you should restart the mmdvmhost program keying on the console:
-``` 
-sudo systemctl restart mmdvmhost
-``` 
-  
-# How to improve the Pi-Star image
+# Pi-Star improvments included in the YSF2DMR contrib and installed by default
 
 Pi-Star image is not optimized to support YSF2DMR. The first problem we need to fix is the periodically update of the DMR database so we don't need to be concerned about the obsolescence of the database. To do this we need to put in the /usr/local/bin folder the auxiliary file "updateDMRIDs.sh" so it can be called. Also we need to grant it execution permission. This file resides in the git folder MMDVM_CM/YSF2DMR/contrib.
 
