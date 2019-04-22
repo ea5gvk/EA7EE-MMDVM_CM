@@ -109,6 +109,7 @@ int main(int argc, char** argv)
 }
 
 CYSF2DMR::CYSF2DMR(const std::string& configFile) :
+m_storage(NULL),
 m_callsign(),
 m_suffix(),
 m_conf(configFile),
