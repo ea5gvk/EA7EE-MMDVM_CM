@@ -344,15 +344,15 @@ WX_STATUS CWiresX::process(const unsigned char* data, const unsigned char* sourc
 	}
 
 	if (fn == 1U) {
-		bool valid = payload.readDataFRModeData2(data, m_command + 0U);
+		bool valid = payload.readDataFRModeData2(data, m_command + (bn * 260U) + 0U);
 		if (!valid)
 			return WXS_NONE;
 	} else {
-		bool valid = payload.readDataFRModeData1(data, m_command + (fn - 2U) * 40U + 20U);
+		bool valid = payload.readDataFRModeData1(data, m_command + (bn * 260U) + (fn - 2U) * 40U + 20U);
 		if (!valid)
 			return WXS_NONE;
 
-		valid = payload.readDataFRModeData2(data, m_command + (fn - 2U) * 40U + 40U);
+		valid = payload.readDataFRModeData2(data, m_command + (bn * 260U) + (fn - 2U) * 40U + 40U);
 		if (!valid)
 			return WXS_NONE;
 	}
