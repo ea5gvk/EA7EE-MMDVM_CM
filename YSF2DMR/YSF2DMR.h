@@ -47,6 +47,7 @@
 #include "WiresX.h"
 #include "CRC.h"
 #include "APRSReader.h"
+#include "Storage.h"
 
 #include <string>
 
@@ -73,6 +74,7 @@ public:
 	int run();
 
 private:
+	CWiresXStorage*  m_storage;	
 	std::string      m_callsign;
 	std::string      m_suffix;
 	CConf            m_conf;
@@ -114,8 +116,8 @@ private:
 	bool             m_remoteGateway;
 	unsigned int     m_hangTime;
 	bool             m_firstSync;
-	bool			 m_tgConnected;
-    bool             m_saveAMBE;
+	bool	   	 m_tgConnected;
+   	bool             m_saveAMBE;
 
 	bool createDMRNetwork();
 	void createGPS();
