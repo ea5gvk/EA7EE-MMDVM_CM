@@ -843,6 +843,7 @@ void CWiresX::createReply(const unsigned char* data, unsigned int length, const 
 
 	// Write the header
 	unsigned char buffer[200U];
+	::memcpy(buffer, m_header, 34U);
 	
 	if (dst_callsign) 
 		::memcpy(buffer+24U,dst_callsign,10U);
@@ -1060,7 +1061,7 @@ void CWiresX::sendDXReply()
 	data[127U] = 0x03U;			// End of data marker
 	data[128U] = CCRC::addCRC(data, 128U);
 
-	//CUtils::dump(1U, "DX Reply", data, 129U);
+	CUtils::dump(1U, "DX Reply", data, 129U);
 
 	createReply(data, 129U, NULL);
 
