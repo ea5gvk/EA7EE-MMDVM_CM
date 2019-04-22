@@ -39,7 +39,13 @@ enum WX_STATUS {
 	WXS_DX,
 	WXS_ALL,
 	WXS_NEWS,
-	WXS_FAIL
+	WXS_FAIL,
+	WXS_LIST,
+	WXS_GET_MESSAGE,
+	WXS_UPLOAD,
+	WXS_VOICE,
+	WXS_PICTURE,
+	WXS_PLAY	
 };
 
 enum WXSI_STATUS {
@@ -50,7 +56,17 @@ enum WXSI_STATUS {
 	WXSI_ALL,
 	WXSI_NEWS,
 	WXSI_SEARCH,
-	WXSI_CATEGORY
+	WXSI_CATEGORY,
+	WXSI_LIST,
+	WXSI_GET_MESSAGE,
+	WXSI_UPLOAD	
+};
+
+enum WXPIC_STATUS {
+	WXPIC_NONE,
+	WXPIC_BEGIN,
+	WXPIC_DATA,
+	WXPIC_END
 };
 
 class CTGReg {
@@ -75,11 +91,11 @@ public:
 	CWiresX(const std::string& callsign, const std::string& suffix, CYSFNetwork* network, std::string tgfile, bool makeUpper, unsigned int reloadTime);
 	virtual ~CWiresX();
 
-    bool read();
+    	bool read();
 	virtual void entry();
 	virtual void stop();
 
-	WX_STATUS process(const unsigned char* data, const unsigned char* source, unsigned char fi, unsigned char dt, unsigned char fn, unsigned char ft);
+	WX_STATUS process(const unsigned char* data, const unsigned char* source, unsigned char fi, unsigned char dt, unsigned char fn, unsigned char ft, unsigned char bn, unsigned char bt);
 
 	unsigned int getDstID();
 	unsigned int getTgCount();
@@ -96,10 +112,14 @@ public:
 	void sendConnectReply(unsigned int reflector);
 	void sendDisconnectReply();
 	void clock(unsigned int ms);
+	void sendUploadVoiceReply();
+	bool EndPicture();
+	std::string NameTG(unsigned int SrcId);	
 
 private:
+	CWiresXStorage*		m_storage;	
 	std::string          m_callsign;
-	std::string			 m_tgfile;
+	std::string		m_tgfile;
 	unsigned int         m_reloadTime;
 	std::string          m_node;
 	std::string          m_id;
@@ -128,12 +148,29 @@ private:
 	bool                 m_makeUpper;
 	CStopWatch           m_txWatch;
 	CRingBuffer<unsigned char> m_bufferTX;
+	unsigned char 		 m_type;
+	unsigned int         m_number;
+	unsigned char        m_news_source[5];
+	std::string          m_source;
+	unsigned char		 m_serial[6];
+	unsigned char 		 m_talky_key[5];
+	WXPIC_STATUS		 m_picture_state;
+	unsigned int 		m_offset;
+	unsigned int 	     m_pcount;
+	bool			m_end_picture;	
+	
 
 	WX_STATUS processConnect(const unsigned char* source, const unsigned char* data);
 	void processDX(const unsigned char* source);
 	void processAll(const unsigned char* source, const unsigned char* data);
 	void processNews(const unsigned char* source, const unsigned char* data);
 	void processCategory(const unsigned char* source, const unsigned char* data);
+	void processListDown(const unsigned char* source, const unsigned char* data);
+	void processGetMessage(const unsigned char* source, const unsigned char* data);
+	WX_STATUS processUploadMessage(const unsigned char* source, const unsigned char* data, unsigned int gps);
+	WX_STATUS processUploadPicture(const unsigned char* source, const unsigned char* data, unsigned int gps);
+	void processPictureACK(const unsigned char* source, const unsigned char* data);
+	void processDataPicture(const unsigned char* data, unsigned int size);	
 
 	void sendDXReply();
 	void sendAllReply();
@@ -141,7 +178,13 @@ private:
 	void sendSearchReply();
 	void sendSearchNotFoundReply();
 	void sendCategoryReply();
-
+	void sendListReply();
+	void sendGetMessageReply();
+	void sendUploadReply();
+	void sendPictureBegin();
+	void sendPictureData();
+	void sendPictureEnd();
+	
 	void createReply(const unsigned char* data, unsigned int length);
 	void writeData(const unsigned char* data);
 	unsigned char calculateFT(unsigned int length, unsigned int offset) const;
