@@ -849,7 +849,7 @@ void CWiresX::createReply(const unsigned char* data, unsigned int length, const 
 	if (dst_callsign) 
 		::memcpy(buffer+24U,dst_callsign,10U);
 	
-	LogMessage("%34.34s.",buffer);	
+	//LogMessage("%34.34s.",buffer);	
 
 	CSync::addYSFSync(buffer + 35U);
 
