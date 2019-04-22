@@ -384,14 +384,17 @@ WX_STATUS CWiresX::process(const unsigned char* data, const unsigned char* sourc
 		m_source = tmp;		
 
 		if (::memcmp(m_command + 1U, DX_REQ, 3U) == 0) {
+			CUtils::dump("DX Command", m_command, cmd_len);						
 			processDX(source);
 			return WXS_DX;
 		} else if (::memcmp(m_command + 1U, ALL_REQ, 3U) == 0) {
+			CUtils::dump("ALL command", m_command, cmd_len);			
 			processAll(source, m_command + 5U);
 			return WXS_ALL;
 		} else if (::memcmp(m_command + 1U, CONN_REQ, 3U) == 0) {
 			return processConnect(source, m_command + 5U);
 		} else if (::memcmp(m_command + 1U, NEWS_REQ, 3U) == 0) {
+			CUtils::dump("News command", m_command, cmd_len);						
 			processNews(source, m_command + 5U);
 			return WXS_NEWS;
 		} else if (::memcmp(m_command + 1U, LIST_REQ, 3U) == 0) {
@@ -553,17 +556,13 @@ void CWiresX::processAll(const unsigned char* source, const unsigned char* data)
 
 		m_timer.start();
 	} else if (data[0U] == 'A' && data[1U] == '1') {
-		::LogMessage("Received LOCAL NEWS for \"%16.16s\" from %10.10s", data + 5U, source);
-
-		char buffer[4U];
-		::memcpy(buffer, data + 2U, 3U);
-		buffer[3U] = 0x00U;
+		::LogMessage("Received LOCAL NEWS for \"%16.16s\" from %10.10s", data + 0U, source);
 
 		m_start = ::atoi(buffer);
 		if (m_start > 0U)
 			m_start--;
 
-		m_status = WXSI_ALL;
+		m_status = WXSI_LNEWS;
 
 		m_timer.start();
 	}
