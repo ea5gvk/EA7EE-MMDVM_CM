@@ -89,7 +89,7 @@ public:
 
 class CWiresX: public CThread  {
 public:
-	CWiresX(const std::string& callsign, const std::string& suffix, CYSFNetwork* network, std::string tgfile, bool makeUpper, unsigned int reloadTime);
+	CWiresX(CWiresXStorage* storage, const std::string& callsign, const std::string& suffix, CYSFNetwork* network, std::string tgfile, bool makeUpper, unsigned int reloadTime);
 	virtual ~CWiresX();
 
     	bool read();
