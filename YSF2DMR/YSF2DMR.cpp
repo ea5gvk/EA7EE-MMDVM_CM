@@ -340,7 +340,7 @@ int CYSF2DMR::run()
 	unsigned int txFrequency = m_conf.getTxFrequency();
 
 	if (m_wiresX != NULL)
-		m_wiresX->setInfo(name, txFrequency, rxFrequency, reflector);
+		m_wiresX->setInfo(name, txFrequency, rxFrequency, m_dstid);
 
 	if (m_conf.getAPRSEnabled()) {
 		createGPS();
@@ -514,9 +514,11 @@ int CYSF2DMR::run()
 				unsigned char dt = fich.getDT();
 				unsigned char fn = fich.getFN();
 				unsigned char ft = fich.getFT();
+				unsigned char bn = fich.getBN();				
+				unsigned char bt = fich.getBT();				
 				
 				if (m_wiresX != NULL) {
-					WX_STATUS status = m_wiresX->process(buffer + 35U, buffer + 14U, fi, dt, fn, ft);
+					WX_STATUS status = m_wiresX->process(buffer + 35U, buffer + 14U, fi, dt, fn, ft, bn, bt);
 					m_ysfSrc = getSrcYSF(buffer);
 
 					switch (status) {
