@@ -100,6 +100,7 @@ m_dstID(0U),
 m_network(network),
 m_command(NULL),
 m_timer(1000U, 1U),
+m_ptimer(1000U, 1U),
 m_seqNo(0U),
 m_header(NULL),
 m_csd1(NULL),
@@ -718,23 +719,6 @@ WX_STATUS CWiresX::processConnect(const unsigned char* source, const unsigned ch
 	return WXS_CONNECT;
 }
 
-WX_STATUS CWiresX::processConnect(const unsigned char* source, const unsigned char* data)
-{
-	//::LogDebug("Received Connect to %6.6s from %10.10s", data, source);
-
-	std::string id = std::string((char*)data, 6U);
-
-	m_dstID = atoi(id.c_str());
-	if (m_dstID == 0)
-		return WXS_NONE;
-
-	m_status = WXSI_CONNECT;
-	m_timer.start();
-
-	return WXS_CONNECT;
-}
-
-
 void CWiresX::processConnect(int dstID)
 {
 	m_dstID = dstID;
@@ -754,7 +738,7 @@ void CWiresX::processDisconnect(const unsigned char* source)
 
 void CWiresX::clock(unsigned int ms)
 {
-	unsigned char buffer[200U];
+//	unsigned char buffer[200U];
 
 	m_timer.clock(ms);
 	if (m_timer.isRunning() && m_timer.hasExpired()) {
