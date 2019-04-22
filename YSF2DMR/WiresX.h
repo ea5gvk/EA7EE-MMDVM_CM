@@ -21,6 +21,7 @@
 #if !defined(WIRESX_H)
 #define	WIRESX_H
 
+#include "Storage.h"
 #include "YSFNetwork.h"
 #include "DMRNetwork.h"
 #include "Thread.h"
