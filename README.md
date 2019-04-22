@@ -28,14 +28,13 @@ You can connect via SSH to the board running last pi-star version. Then you can 
 ```
 rpi-rw
 sudo su
-cd /
-mkdir opt
+cd /opt
 git clone https://github.com/msraya/MMDVM_CM.git
 cd MMDVM_CM/YSF2DMR
 make
 make install
 ```
-Then you can configure it on the pi-star dashboard only selecting EA7EE YSF2DMR mode. It's all.
+Then you can configure it on the pi-star dashboard as another mode, only selecting EA7EE YSF2DMR mode. It's all.
 
 # Pi-Star improvments included in the YSF2DMR contrib and installed by default
 
