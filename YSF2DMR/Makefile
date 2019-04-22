@@ -39,3 +39,5 @@ install:
 		cp ./contrib/beacon.amb /usr/local/etc
 		mv /usr/local/bin/MMDVMHost /usr/local/bin/MMDVMHost.first
 		cp ./contrib/MMDVMHost /usr/local/bin
+		chmod a+x /usr/local/bin/MMDVMHost
+		
