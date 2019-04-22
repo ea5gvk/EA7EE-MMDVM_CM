@@ -127,7 +127,7 @@ m_number(0U)
 
 	m_callsign.resize(YSF_CALLSIGN_LENGTH, ' ');
 
-	m_command = new unsigned char[300U];
+	m_command = new unsigned char[1100U];
 
 	m_header = new unsigned char[34U];
 	m_csd1   = new unsigned char[20U];
