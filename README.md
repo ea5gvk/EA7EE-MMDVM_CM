@@ -19,6 +19,7 @@ In this fork I will only work on the YSF2DMR branch to obtain WiresX repeaters s
 - Send WiresX Photo to email and Telegram and back (working on it)
 
 Please be patient, I will upload my code on the repository as soon as possible and will mark those functions uploaded.
+Please also to bear in mind that this Software has been designed for my personal use only, so it can not be usable for you. However, you can upload and download text messages and pictures now. Only you MUST HAVE VERY LOW BER in your HotSpot to use "high speed" data transfer.
 
 This software is licensed under the GPL v3 and is intended for amateur and educational use only. Use of this software for commercial purposes is strictly forbidden.
 
