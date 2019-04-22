@@ -997,16 +997,17 @@ int CYSF2DMR::run()
 					::memcpy(gps_buffer, dt1_temp, 10U);
 					::memcpy(gps_buffer + 10U, dt2_temp, 10U);
 
+					m_netDst = (netflco == FLCO_GROUP ? "TG " : "") + m_lookup->findCS(DstId);
 					if (SrcId == 9990U)
 						m_netSrc = "PARROT";
 					else if (SrcId == 9U)
 						m_netSrc = "LOCAL";
 					else if (SrcId == 4000U)
 						m_netSrc = "UNLINK";
-					else
+					else {
 						m_netSrc = m_lookup->findCS(SrcId);
-
-					m_netDst = (netflco == FLCO_GROUP ? "TG " : "") + m_lookup->findCS(DstId);
+						m_netDst = m_wiresX->NameTG(DstId);
+					}
 
 					m_conv.putDMRHeader();
 					LogMessage("DMR audio received from %s to %s", m_netSrc.c_str(), m_netDst.c_str());
@@ -1039,16 +1040,17 @@ int CYSF2DMR::run()
 					tx_dmrdata.getData(dmr_frame);
 
 					if (!m_dmrinfo) {
+						m_netDst = (netflco == FLCO_GROUP ? "TG " : "") + m_lookup->findCS(DstId);
 						if (SrcId == 9990U)
 							m_netSrc = "PARROT";
 						else if (SrcId == 9U)
 							m_netSrc = "LOCAL";
 						else if (SrcId == 4000U)
 							m_netSrc = "UNLINK";
-						else
+						else{
 							m_netSrc = m_lookup->findCS(SrcId);
-
-						m_netDst = (netflco == FLCO_GROUP ? "TG " : "") + m_lookup->findCS(DstId);
+							m_netDst = m_wiresX->NameTG(DstId);
+						}
 
 						LogMessage("DMR audio late entry received from %s to %s", m_netSrc.c_str(), m_netDst.c_str());
 
@@ -1301,6 +1303,7 @@ int CYSF2DMR::run()
 
 	if (m_wiresX != NULL) {
 		delete m_wiresX;
+		delete m_storage;		
 		delete m_dtmf;
 	}
 
