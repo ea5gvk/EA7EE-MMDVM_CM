@@ -361,8 +361,8 @@ unsigned int CWiresXStorage::GetMessage(unsigned char *data,unsigned int number,
 		::memcpy(data+68U,record+66U,16U); */
 		
 		char from[6]="21421";
-		char call[11]="**********";
-        strcpy(tmp,"01");		
+		//char call[11]="**********";
+        	strcpy(tmp,"01");		
 		
 		::memcpy(data+5U,tmp,2U);
 		//01
@@ -396,7 +396,7 @@ unsigned int CWiresXStorage::GetPictureHeader(unsigned char *data,unsigned int n
 	FILE *file;
 	char index_str[80U];
 	char record[83U];  // records are 83 bytes long	
-	unsigned int n,off;
+	unsigned int n;
 	char tmp[6];
 	char cab[7]={0x50,0x00,0x00,0x30,0x00,0x00,0x00};
 
