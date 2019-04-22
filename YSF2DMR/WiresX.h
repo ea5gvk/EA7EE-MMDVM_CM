@@ -55,6 +55,7 @@ enum WXSI_STATUS {
 	WXSI_CONNECT,
 	WXSI_DISCONNECT,
 	WXSI_ALL,
+	WXSI_LNEWS,	
 	WXSI_NEWS,
 	WXSI_SEARCH,
 	WXSI_CATEGORY,
@@ -133,6 +134,7 @@ private:
 	unsigned char*       m_command;
 	unsigned int         m_count;
 	CTimer               m_timer;
+	CTimer               m_ptimer;	
 	unsigned char        m_seqNo;
 	unsigned char*       m_header;
 	unsigned char*       m_csd1;
@@ -186,7 +188,7 @@ private:
 	void sendPictureData();
 	void sendPictureEnd();
 	
-	void createReply(const unsigned char* data, unsigned int length);
+	void createReply(const unsigned char* data, unsigned int length, const char* dst_callsign);
 	void writeData(const unsigned char* data);
 	unsigned char calculateFT(unsigned int length, unsigned int offset) const;
 };
