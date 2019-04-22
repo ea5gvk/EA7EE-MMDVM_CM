@@ -352,6 +352,7 @@ int CYSF2DMR::run()
 	CStopWatch bea_voice_Watch;
 	CStopWatch beacon_Watch;
 	CStopWatch timeout_Watch;
+	CStopWatch news_Watch;	
 	stopWatch.start();
 	ysfWatch.start();
 	dmrWatch.start();
@@ -359,6 +360,7 @@ int CYSF2DMR::run()
 	ysfWatchdog.stop();
 	beacon_Watch.start();
 	timeout_Watch.start();
+	news_Watch.start();	
 
 	unsigned char ysf_cnt = 0;
 	unsigned char dmr_cnt = 0;
@@ -382,13 +384,22 @@ int CYSF2DMR::run()
 	BE_STATUS beacon_status;
 	beacon_status = BE_OFF;
     	bool first_time = true;
-	bool first_time_b = true;	
+	bool first_time_b = true;
+	bool sending_picture = false;
+	std::string news_file_name;	
 
 	for (; end == 0;) {
 		unsigned char buffer[2000U];
 
 		CDMRData tx_dmrdata;
 		unsigned int ms = stopWatch.elapsed();
+		
+		if (sending_picture && (m_wiresX->EndPicture() || (news_Watch.elapsed()> (10*TIME_MIN)))) {
+				m_dmrNetwork->enable(true);
+				LogMessage("Enabling DRM Interface.");				
+				sending_picture = false;
+				m_saveAMBE=0;				
+		}		
 
 		// TG Connection safe process at init
 		// To unlink old dynamic TG
@@ -507,6 +518,14 @@ int CYSF2DMR::run()
 					m_ysfSrc = getSrcYSF(buffer);
 
 					switch (status) {
+						case WXS_PICTURE:
+						case WXS_UPLOAD:
+						case WXS_GET_MESSAGE:
+							news_Watch.start();
+							LogMessage("Disabling DRM Interface.");
+							m_dmrNetwork->enable(false);
+							sending_picture = true;
+						    break;							
 						case WXS_CONNECT:
 							not_busy=0;
 							m_srcid = findYSFID(m_ysfSrc, false);
