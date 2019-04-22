@@ -328,7 +328,7 @@ int CYSF2DMR::run()
 	if (m_enableWiresX) {
 		bool makeUpper = m_conf.getWiresXMakeUpper();
 		m_storage = new CWiresXStorage;				
-		m_wiresX = new CWiresX(m_callsign, m_suffix, m_ysfNetwork, m_TGList, makeUpper, tglist_reload);
+		m_wiresX = new CWiresX(m_storage, m_callsign, m_suffix, m_ysfNetwork, m_TGList, makeUpper, tglist_reload);
 		m_dtmf = new CDTMF;
 
 		if (m_wiresX->getOpt(m_dstid)==2) m_dmrflco = FLCO_USER_USER;
