@@ -741,6 +741,8 @@ void CWiresX::clock(unsigned int ms)
 //	unsigned char buffer[200U];
 
 	m_timer.clock(ms);
+	m_ptimer.clock(ms);	
+	
 	if (m_timer.isRunning() && m_timer.hasExpired()) {
 		switch (m_status) {
 		case WXSI_DX:
