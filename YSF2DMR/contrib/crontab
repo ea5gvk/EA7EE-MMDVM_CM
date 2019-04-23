@@ -16,4 +16,4 @@ MAILTO=""
 52 3	1 * *	root	mount -o remount,rw / && cd / && run-parts --report /etc/cron.monthly
 0 0,12  * * *   root    [ -x /usr/local/bin/updateDMRIDs.sh  ] && /usr/local/bin/updateDMRIDs.sh
 0  *    * * *   root    [ -x /usr/local/bin/updateTGList.sh ] && /usr/local/bin/updateTGList.sh
-*/5  *    * * *   root    [ -x /usr/local/bin/update_news.sh ] && /usr/local/bin/update_news.sh
+*/15  *    * * *   root    [ -x /usr/local/bin/update_news.sh ] && /usr/local/bin/update_news.sh
