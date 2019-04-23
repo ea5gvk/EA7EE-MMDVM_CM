@@ -24,7 +24,7 @@ first_time = True
 j=0
 for line in content:
   j=j+1
-  print("Processing line %d\r",j)  
+  print "\rProcessing line" + str(j),  
   #Solve unicode string replacement
   line=line.replace("\/"," ")
   line=line.replace("\u00e9","e")
