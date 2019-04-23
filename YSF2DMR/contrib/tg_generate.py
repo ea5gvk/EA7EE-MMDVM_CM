@@ -21,7 +21,10 @@ content = content[1:]
 content = content[:-1]
 f = open("/tmp/TGList.txt","wb+")
 first_time = True
+j=0
 for line in content:
+  j=j+1
+  print("Processing line %d\r",j)  
   #Solve unicode string replacement
   line=line.replace("\/"," ")
   line=line.replace("\u00e9","e")
@@ -35,8 +38,8 @@ for line in content:
   line=line.replace("\u00f1","n")
   line=line.replace("\u2019"," ")
   line=line.replace("\u00e8","e")
-  line=line.replace("\u00fc","u")
-  line=line.replace("Provincial","Prov.")
+  line=line.replace("Provincial","")
+  line=line.replace("Regional","Reg-") 
   #delete line feed
   line=line.replace("\n","")
   line=line.replace("\r","")
