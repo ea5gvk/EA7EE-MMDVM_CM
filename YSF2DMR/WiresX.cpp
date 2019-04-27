@@ -817,7 +817,7 @@ void CWiresX::clock(unsigned int ms)
 
 	if (m_timeout.isRunning() && m_timeout.hasExpired()) {
 		m_end_picture = true;
-		sendUploadReply()
+		sendUploadReply();
 		m_storage->PictureError();
 		m_timeout.stop();
 	}
