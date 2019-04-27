@@ -61,7 +61,8 @@ enum WXSI_STATUS {
 	WXSI_CATEGORY,
 	WXSI_LIST,
 	WXSI_GET_MESSAGE,
-	WXSI_UPLOAD	
+	WXSI_UPLOAD_PIC,
+	WXSI_UPLOAD_TXT
 };
 
 enum WXPIC_STATUS {
@@ -161,7 +162,8 @@ private:
 	WXPIC_STATUS		 m_picture_state;
 	unsigned int 		m_offset;
 	unsigned int 	     m_pcount;
-	bool			m_end_picture;	
+	bool			m_end_picture;
+	bool			error_upload;
 	
 
 	WX_STATUS processConnect(const unsigned char* source, const unsigned char* data);
@@ -185,7 +187,7 @@ private:
 	void sendCategoryReply();
 	void sendListReply();
 	void sendGetMessageReply();
-	void sendUploadReply();
+	void sendUploadReply(bool);
 	void sendPictureBegin();
 	void sendPictureData();
 	void sendPictureEnd();

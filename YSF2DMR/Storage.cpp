@@ -33,6 +33,7 @@
 
 #include <algorithm>
 #include <functional>
+#include <iostream>
 #include <cstdio>
 #include <cstdlib>
 #include <cassert>
@@ -136,9 +137,7 @@ void CWiresXStorage::UpdateIndex(wiresx_record* reg)
 }
 
 void CWiresXStorage::AddPictureData(const unsigned char *data, unsigned int size, unsigned char *source)
-{
-unsigned int final_size;
-	
+{	
 	if (m_picture_file) {	
 		if (size>771U) {
 			fwrite(data,1,250U,m_picture_file);			
@@ -155,11 +154,8 @@ unsigned int final_size;
 		} 	else fwrite(data,1,size,m_picture_file);
 	}
 	if (size<1027U) {
-		final_size=ftell(m_picture_file);
+		picture_final_size=ftell(m_picture_file);
 		fclose(m_picture_file);
-		::sprintf(m_reg_picture->type,"P%02u",(final_size/1000U)+1);		
-		UpdateIndex(m_reg_picture);
-		delete m_reg_picture;	
 	}
 }
 
@@ -253,6 +249,7 @@ void CWiresXStorage::StorePicture(unsigned const char* data, unsigned const char
 	unsigned int number,off;
 	int status;
 	
+	picture_final_size=0;
 	number=1;
 	if (stat ("/tmp/news", &buffer) != 0) {
 		status = mkdir("/tmp/news", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
@@ -261,6 +258,9 @@ void CWiresXStorage::StorePicture(unsigned const char* data, unsigned const char
 				return;		
 		}
 	}
+	
+	if (m_reg_picture) delete m_reg_picture;
+	m_reg_picture = new wiresx_record;
 	
 	if (gps) {
 		::memcpy(m_reg_picture->gps_pos,data,18U);
@@ -286,8 +286,6 @@ void CWiresXStorage::StorePicture(unsigned const char* data, unsigned const char
 	::strcat(index_str,"/INDEX.DAT");
 	if (stat (index_str, &buffer) == 0) number=(buffer.st_size/83U)+1U;
 	
-	if (m_reg_picture) delete m_reg_picture;
-	m_reg_picture = new wiresx_record;
 	::sprintf(m_reg_picture->callsign,"%10.10s",source);
 
 	::memcpy(m_reg_picture->time_recv,data+off+6U,12U);
@@ -511,11 +509,20 @@ std::string CWiresXStorage::StoreVoice(unsigned const char* data, unsigned const
 	return file_name;
 }
 
-void CWiresXStorage::PictureError() {
+void CWiresXStorage::PictureEnd(bool error) {
+		
+	if (!error) {
+		::LogMessage("Picture uploaded sucessfully");
+		::sprintf(m_reg_picture->type,"P%02u",(picture_final_size/1000U)+1);
+		UpdateIndex(m_reg_picture);
+	}
+	else {
+		::LogMessage("Picture uploaded unsucessfully %s.",m_picture_name.c_str());		
+		if (m_picture_file) fclose(m_picture_file);
+		remove(m_picture_name.c_str());
+	}
 	
-	delete m_reg_picture;
-	fclose(m_picture_file);
-	unlink(m_picture_name.c_str());
+	delete m_reg_picture;	
 }
 
 

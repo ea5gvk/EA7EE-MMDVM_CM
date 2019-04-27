@@ -101,7 +101,7 @@ m_network(network),
 m_command(NULL),
 m_timer(1000U, 1U),
 m_ptimer(1000U, 1U),
-m_timeout(5U, 1U),
+m_timeout(1000U, 5U),
 m_seqNo(0U),
 m_header(NULL),
 m_csd1(NULL),
@@ -375,10 +375,12 @@ WX_STATUS CWiresX::process(const unsigned char* data, const unsigned char* sourc
 		}
 
 		if (!valid) {
-			if (::memcmp(m_command + 1U, PICT_DATA, 3U) != 0) {
-				CUtils::dump("Not Valid", m_command, cmd_len);		
-				return WXS_NONE;
-			}
+			if (::memcmp(m_command + 1U, PICT_DATA, 3U) == 0) {
+				LogMessage("Error Data Packet receiving picture");
+				error_upload= true;	
+			}				
+			CUtils::dump("Not Valid", m_command, cmd_len);		
+			return WXS_NONE;
 		}
 		
 		char tmp[11];
@@ -424,17 +426,16 @@ WX_STATUS CWiresX::process(const unsigned char* data, const unsigned char* sourc
 			act_ref=m_command[7U];
 			if (last_ref==act_ref) {
 				LogMessage("Duplicated picture block.");
-				m_end_picture = true;
-				sendUploadReply();				
-				m_storage->PictureError();
-				m_timeout.stop();				
+				error_upload= true;			
 				return WXS_NONE;
 			}
 			last_ref=act_ref;
 			CUtils::dump("Picture Data", m_command, cmd_len);
 			LogMessage("Block size: %u.",block_size);
 			processDataPicture(m_command + 5U, block_size);
-			if (block_size<1027U) processPictureACK(source, m_command + 5U);
+			if (block_size<1027U) {
+				processPictureACK(source, m_command + 5U);
+			}
 			return WXS_NONE; 			
 		} else if (::memcmp(m_command + 1U, DISC_REQ, 3U) == 0) {
 			processDisconnect(source);
@@ -635,6 +636,7 @@ WX_STATUS CWiresX::processUploadPicture(const unsigned char* source, const unsig
 	char tmp3[6];
 	
 	m_end_picture=false;
+	error_upload=false;
 	
 	if (gps) ::memcpy(tmp1,data+48U,5U);
 	else ::memcpy(tmp1,data+30U,5U);
@@ -671,9 +673,11 @@ void CWiresX::processDataPicture(const unsigned char* data, unsigned int size)
 
 void CWiresX::processPictureACK(const unsigned char* source, const unsigned char* data)
 {
-	m_status = WXSI_UPLOAD;
-
+	m_status = WXSI_UPLOAD_PIC;
+	m_end_picture=true;		
+	m_timeout.start();
 	m_timer.start();
+	m_timeout.stop();
 }
 
 WX_STATUS CWiresX::processUploadMessage(const unsigned char* source, const unsigned char* data, unsigned int gps)
@@ -705,7 +709,7 @@ WX_STATUS CWiresX::processUploadMessage(const unsigned char* source, const unsig
 	
 	m_storage->StoreTextMessage(data,source,gps);
 
-	m_status = WXSI_UPLOAD;
+	m_status = WXSI_UPLOAD_TXT;
 
 	m_timer.start();
 	return WXS_UPLOAD;
@@ -779,10 +783,12 @@ void CWiresX::clock(unsigned int ms)
 		case WXSI_LIST:
 			sendListReply();
 			break;		
-		case WXSI_UPLOAD:
-			sendUploadReply();
-			m_end_picture=true;				
+		case WXSI_UPLOAD_PIC:
+			sendUploadReply(true);			
 			break;
+		case WXSI_UPLOAD_TXT:
+			sendUploadReply(false);			
+			break;			
 		case WXSI_GET_MESSAGE:
 			sendGetMessageReply();
 			break;				
@@ -816,9 +822,8 @@ void CWiresX::clock(unsigned int ms)
 	}	
 
 	if (m_timeout.isRunning() && m_timeout.hasExpired()) {
-		m_end_picture = true;
-		sendUploadReply();
-		m_storage->PictureError();
+		LogMessage("Error Timeout sending Picture");
+		//error_upload= true;
 		m_timeout.stop();
 	}
 
@@ -1576,15 +1581,22 @@ void CWiresX::sendPictureEnd()
 }
 
 
-void CWiresX::sendUploadReply()
+void CWiresX::sendUploadReply(bool pict)
 {
 	unsigned char data[1100U];
 	::memset(data, 0x00U, 1100U);
+	
+
 	
 	data[0U] = m_seqNo;
 
 	for (unsigned int i = 0U; i < 4U; i++)
 		data[i + 1U] = UP_ACK[i];
+	
+	if (pict) {
+		m_storage->PictureEnd(error_upload);	
+		if (error_upload) data[2U]=0x31;
+	}
 	
 	::memcpy(data+5U,m_serial,6U);
 	
