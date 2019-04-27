@@ -37,43 +37,14 @@
 #include <cstdlib>
 #include <cassert>
 #include <cstring>
-#include <cctype>
-
-wiresx_record mesg={"T01",1,"Hola esto es una pruebaaaaaaaa                                                  ",
-						"Prueba          ","02147",
-						"EA7EE     ",
-						"000340",
-						"190316213600",
-						"190316213600","\x53\x37\x51\x56\x53\x51\x7C\x53\x71\x6C\x20\x1C\x5B\x2F    "};
-						
-wiresx_record picture={"P04",2,"                                                                                ",
-						"2018/12/22 15:09","02147",
-						"EA7EE     ",
-						"000340",						
-						"190316213600",
-						"190316213600","\x53\x37\x51\x56\x53\x51\x7C\x53\x71\x6C\x20\x1C\x5B\x2F    "};						
-
-wiresx_record voice={"V01",3,"                                                                                ",
-						"Uploaded Voice  ","02147",
-						"EA7EE     ",
-						"000340",						
-						"190316213600",
-						"190316213600","\x53\x37\x51\x56\x53\x51\x7C\x53\x71\x6C\x20\x1C\x5B\x2F    "};								
+#include <cctype>							
 						
 CWiresXStorage::CWiresXStorage() :
 m_callsign(),
 m_number(1)
 {
 	m_picture_file = NULL;
-	
-/*	::LogMessage("Updating file.");
-	// Store a message
-	UpdateIndex(&mesg);
-	// Store a voice
-	UpdateIndex(&picture);
-	fclose(m_picture_file);
-	// Store a Picture
-	UpdateIndex(&voice);	*/
+	m_reg_picture = NULL;
 }
 
 CWiresXStorage::~CWiresXStorage()
@@ -194,7 +165,9 @@ unsigned int final_size;
 	if (size<1027U) {
 		final_size=ftell(m_picture_file);
 		fclose(m_picture_file);
-		StoreSize(final_size);
+		::sprintf(m_reg_picture->type,"P%02u",(final_size/1000U)+1);		
+		UpdateIndex(m_reg_picture);
+		delete reg;	
 	}
 }
 
@@ -234,13 +207,7 @@ unsigned int CWiresXStorage::GetList(unsigned char *data, unsigned int type, uns
 	        ((f_type[0]=='V') && (type=='3')) ||
 			((f_type[0]=='E') && (type=='4'))) {
 				if ((items>=start) && (count<20)) {					
-					::memcpy(data+offset,record+36,47U);
-					/* ::memcpy(tmp,record+36U,5U);
-					tmp[5]=0;
-					num=atoi(tmp);
-					sprintf(tmp,"%02u",num);
-					*(data+offset+6U)=tmp[0];
-					*(data+offset+7U)=tmp[1]; */					
+					::memcpy(data+offset,record+36,47U);				
 					offset+=47U;
 					count++;
 				}
@@ -257,7 +224,7 @@ unsigned int CWiresXStorage::GetList(unsigned char *data, unsigned int type, uns
 	return offset;
 	}	
 
-void CWiresXStorage::StoreMessage(unsigned const char* data, unsigned const char* source, unsigned int gps, unsigned char type)
+void CWiresXStorage::StoreTextMessage(unsigned const char* data, unsigned const char* source, unsigned int gps)
 {
 	wiresx_record *reg;
 	unsigned int off;
@@ -278,20 +245,40 @@ void CWiresXStorage::StoreMessage(unsigned const char* data, unsigned const char
 	::memcpy(reg->time_send,data+off+18U,12U);
 	::memcpy(reg->to,data+off+30U,5U);
 
-	if (type=='T') {
-		::sprintf(reg->type,"T01");
-		::memcpy(reg->text,data+off+45U,80U);
-		::sprintf(reg->subject,"                ");
-	}
-	else if (type=='P') {
-		::sprintf(reg->type,"P04");
-	    ::memcpy(reg->subject,data+off+45U,16U);
-		if (gps) ::memcpy(reg->token,data+18U,6U);
-		else ::memcpy(reg->token,data,6U);
-	}		
+	::sprintf(reg->type,"T01");
+	::memcpy(reg->text,data+off+45U,80U);
+	::sprintf(reg->subject,"                ")		
 
 	UpdateIndex(reg);
 	delete reg;
+}
+
+void CWiresXStorage::StorePicture(unsigned const char* data, unsigned const char* source, unsigned int gps)
+{
+	wiresx_record *reg;
+	unsigned int off;
+
+	if (m_reg_picture) delete reg;
+	m_reg_picture = new wiresx_record;
+	
+	if (gps) {
+		::memcpy(m_reg_picture->gps_pos,data,18U);
+		off=18U;
+	}
+	else {
+		::memset(m_reg_picture->gps_pos,0,18U);
+		off=0;
+	}
+	::sprintf(m_reg_picture->callsign,"%10.10s",source);
+
+	::memcpy(m_reg_picture->time_recv,data+off+6U,12U);
+	::memcpy(m_reg_picture->time_send,data+off+18U,12U);
+	::memcpy(m_reg_picture->to,data+off+30U,5U);
+
+
+	::memcpy(m_reg_picture->subject,data+off+45U,16U);
+	if (gps) ::memcpy(m_reg_picture->token,data+18U,6U);
+	else ::memcpy(m_reg_picture->token,data,6U);
 }
 	
 unsigned int CWiresXStorage::GetMessage(unsigned char *data,unsigned int number, unsigned char *source) {
@@ -346,22 +333,6 @@ unsigned int CWiresXStorage::GetMessage(unsigned char *data,unsigned int number,
 		fclose(file);
 		
 		m_seq=0;
-		
-		/* char from[6]="77650";
-		char call[11]="**********";		
-		// Copy GPS,ID,TIME
-		::memcpy(data+5U,record,36U); 
-		// TIME
-		::memcpy(data+41U,record+44U,12U);
-		// FROM
-		::memcpy(data+53U,from,5U);  //source  -- from
-		// CALLSIGN
-		::memcpy(data+58U,record+56U,10U); //record+56U  - call
-		//SUBJECT
-		::memcpy(data+68U,record+66U,16U); */
-		
-		//char from[6]="21421";
-		//char call[11]="**********";
         	char tmp1[3];
 		strcpy(tmp1,"01");		
 		
@@ -381,8 +352,7 @@ unsigned int CWiresXStorage::GetMessage(unsigned char *data,unsigned int number,
 		::memcpy(data+44U,record,18U); 		
 		//SUBJECT
 		::memcpy(data+62U,record+66U,16U);
-	    data[78U]=0x0DU;
-		
+	    	data[78U]=0x0DU;
 		if ((m_picture_file=fopen(file_name,"rb"))==0) {
 			LogMessage("Error getting data file: %s",file_name);
 			return 0U;
@@ -472,24 +442,6 @@ unsigned char CWiresXStorage::GetPictureSeq(){
 
 unsigned int CWiresXStorage::GetSumCheck(){
 	return m_sum_check;
-}
-
-void CWiresXStorage::StoreSize(unsigned int size){
-	
-	char tmp[6];
-	FILE *file;
-	char index_str[80U];
-	
-	::sprintf(index_str,"/tmp/news/%s/INDEX.DAT",m_source);	
-	file = fopen(index_str,"rwb");
-	if (!file) {
-		LogMessage("Error getting index file: %s",index_str);
-		return;
-	}
-	fseek(file,83U*(m_number-1)+42U,SEEK_SET);
-	::sprintf(tmp,"%02u",(size/1000U)+1);
-	fwrite(tmp,1,2U,file);
-	fclose(file);	
 }
 
 std::string CWiresXStorage::StoreVoice(unsigned const char* data, unsigned const char* source, unsigned int gps)
