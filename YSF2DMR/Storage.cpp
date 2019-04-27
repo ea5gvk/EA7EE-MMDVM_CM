@@ -482,5 +482,12 @@ std::string CWiresXStorage::StoreVoice(unsigned const char* data, unsigned const
 	return file_name;
 }
 
+void CWiresXStorage::PictureError() {
+	
+	delete m_reg_picture;
+	fclose(m_picture_file);
+	unlink(m_picture_name.c_str());
+}
+
 
 
