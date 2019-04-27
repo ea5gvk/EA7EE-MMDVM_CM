@@ -262,6 +262,15 @@ void CWiresXStorage::StorePicture(unsigned const char* data, unsigned const char
 		}
 	}
 	
+	if (gps) {
+		::memcpy(m_reg_picture->gps_pos,data,18U);
+		off=18U;
+	}
+	else {
+		::memset(m_reg_picture->gps_pos,0,18U);
+		off=0;
+	}
+	
 	::memcpy(destino,data+off+30U,5U);
 	destino[5]=0;	
 	::sprintf(index_str,"/tmp/news/%s",destino);
@@ -279,15 +288,6 @@ void CWiresXStorage::StorePicture(unsigned const char* data, unsigned const char
 	
 	if (m_reg_picture) delete m_reg_picture;
 	m_reg_picture = new wiresx_record;
-	
-	if (gps) {
-		::memcpy(m_reg_picture->gps_pos,data,18U);
-		off=18U;
-	}
-	else {
-		::memset(m_reg_picture->gps_pos,0,18U);
-		off=0;
-	}
 	::sprintf(m_reg_picture->callsign,"%10.10s",source);
 
 	::memcpy(m_reg_picture->time_recv,data+off+6U,12U);
