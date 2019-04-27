@@ -101,6 +101,7 @@ m_network(network),
 m_command(NULL),
 m_timer(1000U, 1U),
 m_ptimer(1000U, 1U),
+m_timeout(1U, 60U * 5U),
 m_seqNo(0U),
 m_header(NULL),
 m_csd1(NULL),
@@ -374,8 +375,10 @@ WX_STATUS CWiresX::process(const unsigned char* data, const unsigned char* sourc
 		}
 
 		if (!valid) {
-			CUtils::dump("Not Valid", m_command, cmd_len);		
-			return WXS_NONE;
+			if (::memcmp(m_command + 1U, PICT_DATA, 3U) != 0) {
+				CUtils::dump("Not Valid", m_command, cmd_len);		
+				return WXS_NONE;
+			}
 		}
 		
 		char tmp[11];
@@ -421,6 +424,9 @@ WX_STATUS CWiresX::process(const unsigned char* data, const unsigned char* sourc
 			act_ref=m_command[7U];
 			if (last_ref==act_ref) {
 				LogMessage("Duplicated picture block.");
+				m_end_picture = true;
+				processPictureACK(source, m_command + 5U);
+				m_timeout.stop();				
 				return WXS_NONE;
 			}
 			last_ref=act_ref;
@@ -646,6 +652,7 @@ WX_STATUS CWiresX::processUploadPicture(const unsigned char* source, const unsig
 	}
 
 	::LogMessage("Received Picture Upload from %10.10s", source);
+	m_timeout.start();
 	
 	if (gps) ::memcpy(m_serial,data+18U,6U);
 	else ::memcpy(m_serial,data,6U);
@@ -740,7 +747,8 @@ void CWiresX::clock(unsigned int ms)
 //	unsigned char buffer[200U];
 
 	m_timer.clock(ms);
-	m_ptimer.clock(ms);	
+	m_ptimer.clock(ms);
+	m_timeout.clock(ms);
 	
 	if (m_timer.isRunning() && m_timer.hasExpired()) {
 		switch (m_status) {
@@ -794,14 +802,22 @@ void CWiresX::clock(unsigned int ms)
 			break;
 		case WXPIC_END:
 				sendPictureEnd();
-				m_end_picture=true;				
+				m_end_picture=true;
 			break;
 		case WXPIC_NONE:
 		default:
-				m_end_picture=false;			
+				m_end_picture=false;
+				m_ptimer.stop();
 			break;
 		}
+		
 	}	
+
+	if (m_timeout.isRunning() && m_timeout.hasExpired()) {
+		m_end_picture = true;
+		processPictureACK(source, m_command + 5U);
+		m_timeout.stop();
+	}
 
 /*	if (m_txWatch.elapsed() > 90U) {
 		if (!m_bufferTX.isEmpty() && m_bufferTX.dataSize() >= 155U) {
