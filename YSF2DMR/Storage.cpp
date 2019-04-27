@@ -247,9 +247,7 @@ void CWiresXStorage::StoreTextMessage(unsigned const char* data, unsigned const 
 
 void CWiresXStorage::StorePicture(unsigned const char* data, unsigned const char* source, unsigned int gps)
 {
-	char record[180U];  // records are 83 bytes long
 	char index_str[80U];
-	char tmp[6];
 	char destino[6];
 	struct stat buffer;
 	unsigned int number,off;
@@ -304,7 +302,7 @@ void CWiresXStorage::StorePicture(unsigned const char* data, unsigned const char
 	std::string file_name(index_str);
 	m_picture_name = file_name;
 	m_picture_file = fopen(index_str,"wb");
-	if (!file) {
+	if (!m_picture_file) {
 		LogMessage("Error writing jpg file: %s",index_str);
 		m_picture_file = NULL;
 		return;
