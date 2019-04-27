@@ -650,7 +650,7 @@ WX_STATUS CWiresX::processUploadPicture(const unsigned char* source, const unsig
 	if (gps) ::memcpy(m_serial,data+18U,6U);
 	else ::memcpy(m_serial,data,6U);
 	
-	m_storage->StoreMessage(data,source,gps,'P');
+	m_storage->StorePicture(data,source,gps);
 	return WXS_PICTURE;
 }
 
@@ -694,7 +694,7 @@ WX_STATUS CWiresX::processUploadMessage(const unsigned char* source, const unsig
 	if (gps) ::memcpy(m_serial,data+18U,6U);
 	else ::memcpy(m_serial,data,6U);
 	
-	m_storage->StoreMessage(data,source,gps,'T');
+	m_storage->StoreTextMessage(data,source,gps);
 
 	m_status = WXSI_UPLOAD;
 
