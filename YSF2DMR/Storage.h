@@ -52,7 +52,7 @@ public:
 	unsigned int GetPictureData(unsigned char *,unsigned int);
 	unsigned char GetPictureSeq();
 	unsigned int GetSumCheck();
-	void StoreSize(unsigned int);
+	void PictureError();
 
 	
 private:
@@ -65,6 +65,7 @@ private:
 	unsigned int    m_sum_check;
 	char 		    m_source[6];
 	wiresx_record   *m_reg_picture;
+	std::string 	m_picture_name;
 	
 	void UpdateIndex(wiresx_record *);
 
