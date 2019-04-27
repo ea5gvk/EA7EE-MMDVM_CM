@@ -132,14 +132,6 @@ void CWiresXStorage::UpdateIndex(wiresx_record* reg)
 		record[120U]=0x0D;	
 		fwrite(record,1,121U,file);
 		fclose(file);
-	} else if (reg->type[0]=='P') {
-		::sprintf(index_str,"/tmp/news/%s/%05u.JPG",destino,number);	
-		m_picture_file = fopen(index_str,"wb");
-		if (!file) {
-			LogMessage("Error writing jpg file: %s",index_str);
-			m_picture_file = NULL;
-			return;
-		}
 	}
 }
 
@@ -255,8 +247,38 @@ void CWiresXStorage::StoreTextMessage(unsigned const char* data, unsigned const 
 
 void CWiresXStorage::StorePicture(unsigned const char* data, unsigned const char* source, unsigned int gps)
 {
-	unsigned int off;
-
+	char record[180U];  // records are 83 bytes long
+	char index_str[80U];
+	char tmp[6];
+	char destino[6];
+	struct stat buffer;
+	unsigned int number,off;
+	int status;
+	
+	number=1;
+	if (stat ("/tmp/news", &buffer) != 0) {
+		status = mkdir("/tmp/news", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+		if (status != 0) {
+				::LogMessage("Cannot create News Directory.");
+				return;		
+		}
+	}
+	
+	::memcpy(destino,data+off+30U,5U);
+	destino[5]=0;	
+	::sprintf(index_str,"/tmp/news/%s",destino);
+	
+	if (stat (index_str, &buffer) != 0) {
+		status = mkdir(index_str, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+		if (status != 0) { 
+			::LogMessage("Cannot create news directory for destination: %s.",destino);
+			return;		
+		}
+	}
+	
+	::strcat(index_str,"/INDEX.DAT");
+	if (stat (index_str, &buffer) == 0) number=(buffer.st_size/83U)+1U;
+	
 	if (m_reg_picture) delete m_reg_picture;
 	m_reg_picture = new wiresx_record;
 	
@@ -274,10 +296,19 @@ void CWiresXStorage::StorePicture(unsigned const char* data, unsigned const char
 	::memcpy(m_reg_picture->time_send,data+off+18U,12U);
 	::memcpy(m_reg_picture->to,data+off+30U,5U);
 
-
 	::memcpy(m_reg_picture->subject,data+off+45U,16U);
 	if (gps) ::memcpy(m_reg_picture->token,data+18U,6U);
 	else ::memcpy(m_reg_picture->token,data,6U);
+
+	::sprintf(index_str,"/tmp/news/%s/%05u.JPG",destino,number);
+	std::string file_name(index_str);
+	m_picture_name = file_name;
+	m_picture_file = fopen(index_str,"wb");
+	if (!file) {
+		LogMessage("Error writing jpg file: %s",index_str);
+		m_picture_file = NULL;
+		return;
+	}	
 }
 	
 unsigned int CWiresXStorage::GetMessage(unsigned char *data,unsigned int number, unsigned char *source) {
