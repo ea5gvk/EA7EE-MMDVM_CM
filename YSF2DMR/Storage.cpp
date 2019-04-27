@@ -204,7 +204,7 @@ unsigned int CWiresXStorage::GetList(unsigned char *data, unsigned int type, uns
 	char index_str[80U];	
 	char record[83U];  // records are 83 bytes long
 	char f_type[3U];
-	unsigned int items,n,offset,count,num;
+	unsigned int items,n,offset,count;
 
 	items=0;count=0;
 	offset=15U;
@@ -235,12 +235,12 @@ unsigned int CWiresXStorage::GetList(unsigned char *data, unsigned int type, uns
 			((f_type[0]=='E') && (type=='4'))) {
 				if ((items>=start) && (count<20)) {					
 					::memcpy(data+offset,record+36,47U);
-					::memcpy(tmp,record+36U,5U);
+					/* ::memcpy(tmp,record+36U,5U);
 					tmp[5]=0;
 					num=atoi(tmp);
 					sprintf(tmp,"%02u",num);
 					*(data+offset+6U)=tmp[0];
-					*(data+offset+7U)=tmp[1];					
+					*(data+offset+7U)=tmp[1]; */					
 					offset+=47U;
 					count++;
 				}
