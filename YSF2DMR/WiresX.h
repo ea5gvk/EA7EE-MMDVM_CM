@@ -134,7 +134,8 @@ private:
 	unsigned char*       m_command;
 	unsigned int         m_count;
 	CTimer               m_timer;
-	CTimer               m_ptimer;	
+	CTimer               m_ptimer;
+	CTimer		     m_timeout;
 	unsigned char        m_seqNo;
 	unsigned char*       m_header;
 	unsigned char*       m_csd1;
