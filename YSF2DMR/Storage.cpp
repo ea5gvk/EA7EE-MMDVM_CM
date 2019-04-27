@@ -167,7 +167,7 @@ unsigned int final_size;
 		fclose(m_picture_file);
 		::sprintf(m_reg_picture->type,"P%02u",(final_size/1000U)+1);		
 		UpdateIndex(m_reg_picture);
-		delete reg;	
+		delete m_reg_picture;	
 	}
 }
 
