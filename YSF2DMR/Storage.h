@@ -44,7 +44,8 @@ public:
 	
 	unsigned int GetList(unsigned char *, unsigned int , unsigned char * , unsigned int);
 	unsigned int GetMessage(unsigned char *,unsigned int,unsigned char *);
-	void StoreMessage(const unsigned char*, const unsigned char*, unsigned int, unsigned char);
+	void StoreTextMessage(const unsigned char*, const unsigned char*, unsigned int);
+	void StorePicture(const unsigned char*, const unsigned char*, unsigned int);	
 	std::string StoreVoice(unsigned const char*, unsigned const char*, unsigned int);
 	void AddPictureData(const unsigned char *, unsigned int, unsigned char *);
 	unsigned int GetPictureHeader(unsigned char *,unsigned int, unsigned char *);
@@ -63,6 +64,7 @@ private:
 	FILE*		    m_picture_file;
 	unsigned int    m_sum_check;
 	char 		    m_source[6];
+	wiresx_record   *m_reg_picture;
 	
 	void UpdateIndex(wiresx_record *);
 
