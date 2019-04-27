@@ -101,7 +101,7 @@ m_network(network),
 m_command(NULL),
 m_timer(1000U, 1U),
 m_ptimer(1000U, 1U),
-m_timeout(1U, 60U * 5U),
+m_timeout(5U, 1U),
 m_seqNo(0U),
 m_header(NULL),
 m_csd1(NULL),
@@ -425,7 +425,8 @@ WX_STATUS CWiresX::process(const unsigned char* data, const unsigned char* sourc
 			if (last_ref==act_ref) {
 				LogMessage("Duplicated picture block.");
 				m_end_picture = true;
-				processPictureACK(source, m_command + 5U);
+				sendUploadReply();				
+				m_storage->PictureError();
 				m_timeout.stop();				
 				return WXS_NONE;
 			}
@@ -663,6 +664,7 @@ WX_STATUS CWiresX::processUploadPicture(const unsigned char* source, const unsig
 
 void CWiresX::processDataPicture(const unsigned char* data, unsigned int size)
 {
+	m_timeout.start();
 	m_storage->AddPictureData(data+5U,size,m_news_source);
 	//if (size<1027U) m_end_picture = true;
 }
@@ -815,7 +817,8 @@ void CWiresX::clock(unsigned int ms)
 
 	if (m_timeout.isRunning() && m_timeout.hasExpired()) {
 		m_end_picture = true;
-		processPictureACK(source, m_command + 5U);
+		sendUploadReply()
+		m_storage->PictureError();
 		m_timeout.stop();
 	}
 
