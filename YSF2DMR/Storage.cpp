@@ -247,7 +247,7 @@ void CWiresXStorage::StoreTextMessage(unsigned const char* data, unsigned const 
 
 	::sprintf(reg->type,"T01");
 	::memcpy(reg->text,data+off+45U,80U);
-	::sprintf(reg->subject,"                ")		
+	::sprintf(reg->subject,"                ");	
 
 	UpdateIndex(reg);
 	delete reg;
@@ -255,10 +255,9 @@ void CWiresXStorage::StoreTextMessage(unsigned const char* data, unsigned const 
 
 void CWiresXStorage::StorePicture(unsigned const char* data, unsigned const char* source, unsigned int gps)
 {
-	wiresx_record *reg;
 	unsigned int off;
 
-	if (m_reg_picture) delete reg;
+	if (m_reg_picture) delete m_reg_picture;
 	m_reg_picture = new wiresx_record;
 	
 	if (gps) {
