@@ -37,7 +37,7 @@ make install
 ```
 Then you can configure it on the pi-star dashboard as another mode, only selecting EA7EE YSF2DMR mode. It's all.
 
-# Pi-Star improvments included in the YSF2DMR contrib and installed by default
+# Pi-Star improvements included in the YSF2DMR contrib and installed by default
 
 Pi-Star image is not optimized to support YSF2DMR. The first problem we need to fix is the periodically update of the DMR database so we don't need to be concerned about the obsolescence of the database. To do this we need to put in the /usr/local/bin folder the auxiliary file "updateDMRIDs.sh" so it can be called. Also we need to grant it execution permission. This file resides in the git folder MMDVM_CM/YSF2DMR/contrib.
 
