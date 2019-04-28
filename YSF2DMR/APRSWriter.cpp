@@ -36,6 +36,8 @@ m_txFrequency(0U),
 m_rxFrequency(0U),
 m_latitude(0.0F),
 m_longitude(0.0F),
+fm_latitude(0.0F),
+fm_longitude(0.0F),
 m_follow(false),
 m_height(0),
 m_desc()
@@ -90,7 +92,7 @@ void CAPRSWriter::write(const unsigned char* source, const char* type, unsigned 
 	assert(type != NULL);
 
 	char callsign[11U];
-
+	
 	strcpy(callsign, (const char *)source);
 	unsigned int i=0;
 	while ((callsign[i]!=' ') && (i<strlen(callsign))) i++;
@@ -143,13 +145,13 @@ void CAPRSWriter::write(const unsigned char* source, const char* type, unsigned 
 	case 0x27U:
 		symbol = '-';
 		strcpy(suffix, "-2");
-		break;
+		break;		
 	default:
 		symbol = '-';
 		strcpy(suffix, "-2");
 		break;
 	}
-
+	
 	char output[300U];
 	::sprintf(output, "%s%s>APDPRS,C4FM*,qAR,%s:!%s%c/%s%c%c %s QRV TG %d via MMDVM",
 		callsign, suffix, m_callsign.c_str(),
@@ -165,7 +167,7 @@ void CAPRSWriter::clock(unsigned int ms)
 	m_idTimer.clock(ms);
 
 	if (m_idTimer.hasExpired()) {
-		//sendIdFrames();
+		sendIdFrames();
 		m_idTimer.start();
 	}
 }
@@ -176,8 +178,7 @@ void CAPRSWriter::close()
 }
 
 void CAPRSWriter::sendIdFrames()
-{
-
+{	
 	// Default values aren't passed on
 	if (m_latitude == 0.0F && m_longitude == 0.0F)
 		return;

@@ -277,18 +277,18 @@ bool CConf::read()
 				m_aprs_beacon_time = (unsigned int)::atoi(value);
 		else if (::strcmp(key, "Enable") == 0)
 			m_aprsEnabled = ::atoi(value) == 1;
-		else if (::strcmp(key, "FollowMe") == 0)
+		else if (::strcmp(key, "HotSpotFollow") == 0)
 			m_aprs_follow_me = ::atoi(value) == 1;
 		else if (::strcmp(key, "Server") == 0)
 			m_aprsServer = value;
 		else if (::strcmp(key, "Port") == 0)
-			m_aprsPort = (unsigned int)::atoi(value);
+			m_aprsPort = (unsigned int)::atoi(value);	
 		else if (::strcmp(key, "Password") == 0)
 			m_aprsPassword = value;
 		else if (::strcmp(key, "APIKey") == 0)
 			m_aprsAPIKey = value;
 		else if (::strcmp(key, "Refresh") == 0)
-			m_aprsRefresh = (unsigned int)::atoi(value);
+			m_aprsRefresh = (unsigned int)::atoi(value);		
 		else if (::strcmp(key, "Description") == 0)
 			m_aprsDescription = value;
 	} else if (section == SECTION_STORAGE) {
