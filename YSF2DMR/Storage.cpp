@@ -17,7 +17,7 @@
 *   along with this program; if not, write to the Free Software
 *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
-
+#include "unistd.h"
 #include "Storage.h"
 #include "WiresX.h"
 #include "YSFPayload.h"
@@ -519,7 +519,8 @@ void CWiresXStorage::PictureEnd(bool error) {
 	else {
 		::LogMessage("Picture uploaded unsucessfully %s.",m_picture_name.c_str());		
 		if (m_picture_file) fclose(m_picture_file);
-		remove(m_picture_name.c_str());
+		int ret = unlink(m_picture_name.c_str());
+		::LogMessage("Unlink returns %d.",ret);	
 	}
 	
 	delete m_reg_picture;	

@@ -625,7 +625,7 @@ void CWiresX::processGetMessage(const unsigned char* source, const unsigned char
 	::LogMessage("Received Get Message number %05u from %10.10s", m_number, source);
 
 	m_status = WXSI_GET_MESSAGE;
-
+	m_end_picture=false;
 	m_timer.start();
 }
 
@@ -1445,6 +1445,7 @@ void CWiresX::sendGetMessageReply()
 	else valid=false;
 	
 	if (data[0]=='T') {
+		m_end_picture=true;
 		data[0U] = m_seqNo;	
 		
 		for (unsigned int i = 0U; i < 4U; i++)

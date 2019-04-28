@@ -523,7 +523,6 @@ int CYSF2DMR::run()
 
 					switch (status) {
 						case WXS_PICTURE:
-						case WXS_UPLOAD:
 						case WXS_GET_MESSAGE:
 							news_Watch.start();
 							LogMessage("Disabling DRM Interface.");
