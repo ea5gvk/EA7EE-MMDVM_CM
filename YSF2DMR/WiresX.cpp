@@ -101,7 +101,7 @@ m_network(network),
 m_command(NULL),
 m_timer(1000U, 1U),
 m_ptimer(1000U, 1U),
-m_timeout(1000U, 5U),
+m_timeout(1000U, 10U),
 m_seqNo(0U),
 m_header(NULL),
 m_csd1(NULL),
@@ -417,17 +417,18 @@ WX_STATUS CWiresX::process(const unsigned char* data, const unsigned char* sourc
 			CUtils::dump("Message Uploading with GPS", m_command, cmd_len);			
 			return processUploadMessage(source, m_command + 5U,1);
 		} else if (::memcmp(m_command + 1U, PICT_REC_GPS, 3U) == 0) {
-			CUtils::dump("Picture Uploading with GPS", m_command, cmd_len);			
+			CUtils::dump("Picture Uploading with GPS", m_command, cmd_len);
+			last_ref=0;			
 			return processUploadPicture(source, m_command + 5U,1);			
 		} else if (::memcmp(m_command + 1U, PICT_REC, 3U) == 0) {
-			CUtils::dump("Picture Uploading", m_command, cmd_len);			
+			CUtils::dump("Picture Uploading", m_command, cmd_len);
+			last_ref=0;
 			return processUploadPicture(source, m_command + 5U,0);
 		} else if (::memcmp(m_command + 1U, PICT_DATA, 3U) == 0) {
 			act_ref=m_command[7U];
-			if (last_ref==act_ref) {
-				LogMessage("Duplicated picture block.");
+			if ((last_ref!=0) && ((last_ref+1)!=act_ref)) {
+				LogMessage("Out of order picture block.");
 				error_upload= true;			
-				return WXS_NONE;
 			}
 			last_ref=act_ref;
 			CUtils::dump("Picture Data", m_command, cmd_len);
@@ -822,8 +823,9 @@ void CWiresX::clock(unsigned int ms)
 	}	
 
 	if (m_timeout.isRunning() && m_timeout.hasExpired()) {
-		LogMessage("Error Timeout sending Picture");
-		//error_upload= true;
+		LogMessage("Error Timeout receiving Picture");
+		m_end_picture=true;		
+		error_upload= true;
 		m_timeout.stop();
 	}
 
@@ -1427,6 +1429,7 @@ void CWiresX::sendListReply()
 	CUtils::dump("Message List Reply", data, offset + 2U);
 
 	createReply(data, offset + 2U, m_source.c_str());
+	LogMessage("Source: %s.",m_source.c_str());
 
 	m_seqNo++;
 }
