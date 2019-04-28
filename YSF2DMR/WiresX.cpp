@@ -826,6 +826,7 @@ void CWiresX::clock(unsigned int ms)
 		LogMessage("Error Timeout receiving Picture");
 		m_end_picture=true;
 		error_upload= true;
+		m_storage->PictureEnd(error_upload);
 		m_timeout.stop();
 	}
 
