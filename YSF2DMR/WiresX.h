@@ -46,7 +46,7 @@ enum WX_STATUS {
 	WXS_UPLOAD,
 	WXS_VOICE,
 	WXS_PICTURE,
-	WXS_PLAY	
+	WXS_PLAY
 };
 
 enum WXSI_STATUS {
@@ -55,7 +55,7 @@ enum WXSI_STATUS {
 	WXSI_CONNECT,
 	WXSI_DISCONNECT,
 	WXSI_ALL,
-	WXSI_LNEWS,	
+	WXSI_LNEWS,
 	WXSI_NEWS,
 	WXSI_SEARCH,
 	WXSI_CATEGORY,
@@ -117,10 +117,10 @@ public:
 	void clock(unsigned int ms);
 	void sendUploadVoiceReply();
 	bool EndPicture();
-	std::string NameTG(unsigned int SrcId);	
+	std::string NameTG(unsigned int SrcId);
 
 private:
-	CWiresXStorage*		m_storage;	
+	CWiresXStorage*		m_storage;
 	std::string          m_callsign;
 	std::string		m_tgfile;
 	unsigned int         m_reloadTime;
@@ -164,7 +164,7 @@ private:
 	unsigned int 	     m_pcount;
 	bool			m_end_picture;
 	bool			error_upload;
-	
+
 
 	WX_STATUS processConnect(const unsigned char* source, const unsigned char* data);
 	void processDX(const unsigned char* source);
@@ -176,7 +176,7 @@ private:
 	WX_STATUS processUploadMessage(const unsigned char* source, const unsigned char* data, unsigned int gps);
 	WX_STATUS processUploadPicture(const unsigned char* source, const unsigned char* data, unsigned int gps);
 	void processPictureACK(const unsigned char* source, const unsigned char* data);
-	void processDataPicture(const unsigned char* data, unsigned int size);	
+	void processDataPicture(const unsigned char* data, unsigned int size);
 
 	void sendDXReply();
 	void sendAllReply();
@@ -191,7 +191,7 @@ private:
 	void sendPictureBegin();
 	void sendPictureData();
 	void sendPictureEnd();
-	
+
 	void createReply(const unsigned char* data, unsigned int length, const char* dst_callsign);
 	void writeData(const unsigned char* data);
 	unsigned char calculateFT(unsigned int length, unsigned int offset) const;

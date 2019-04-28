@@ -183,7 +183,7 @@ unsigned int CDTMF::getDstID()
 {
 	std::string command = m_command;
 	reset();
-	
+
 	std::string id = command.substr(1U);
 
 	return atoi(id.c_str());

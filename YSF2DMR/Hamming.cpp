@@ -138,7 +138,7 @@ bool CHamming::decode1393(bool* d)
 	bool c1 = d[0] ^ d[1] ^ d[2] ^ d[4] ^ d[6] ^ d[7];
 	bool c2 = d[0] ^ d[1] ^ d[2] ^ d[3] ^ d[5] ^ d[7] ^ d[8];
 	bool c3 = d[0] ^ d[2] ^ d[4] ^ d[5] ^ d[8];
-	
+
 	unsigned char n = 0x00U;
 	n |= (c0 != d[9])  ? 0x01U : 0x00U;
 	n |= (c1 != d[10]) ? 0x02U : 0x00U;

@@ -91,8 +91,8 @@ static unsigned char gmult(unsigned char a, unsigned char b)
   return EXP_TABLE[i + j];
 }
 
-/* Simulate a LFSR with generator polynomial for n byte RS code. 
- * Pass in a pointer to the data array, and amount of data. 
+/* Simulate a LFSR with generator polynomial for n byte RS code.
+ * Pass in a pointer to the data array, and amount of data.
  *
  * The parity bytes are deposited into parity.
  */

@@ -33,7 +33,7 @@ public:
 	static bool checkCCITT162(const unsigned char* in, unsigned int length);
 
 	static unsigned char crc8(const unsigned char* in, unsigned int length);
-	
+
 	static unsigned char addCRC(const unsigned char* in, unsigned int length);
 };
 

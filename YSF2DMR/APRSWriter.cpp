@@ -143,13 +143,13 @@ void CAPRSWriter::write(const unsigned char* source, const char* type, unsigned 
 	case 0x27U:
 		symbol = '-';
 		strcpy(suffix, "-2");
-		break;		
+		break;
 	default:
 		symbol = '-';
 		strcpy(suffix, "-2");
 		break;
 	}
-	
+
 	char output[300U];
 	::sprintf(output, "%s%s>APDPRS,C4FM*,qAR,%s:!%s%c/%s%c%c %s QRV TG %d via MMDVM",
 		callsign, suffix, m_callsign.c_str(),

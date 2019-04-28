@@ -158,7 +158,7 @@ private:
   unsigned int m_logFileLevel;
   std::string  m_logFilePath;
   std::string  m_logFileRoot;
-  
+
   bool         m_aprsEnabled;
   std::string  m_aprsServer;
   unsigned int m_aprsPort;

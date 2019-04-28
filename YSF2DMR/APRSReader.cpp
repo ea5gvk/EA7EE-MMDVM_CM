@@ -79,12 +79,12 @@ void CAPRSReader::entry()
 	LogMessage("Started the APRS Reader lookup thread");
 
 	while (!m_stop) {
-		
+
 		while(!m_new_callsign)
 			sleep(1000U);
-		
+
 		load_call();
-		
+
 		m_new_callsign = false;
 	}
 
@@ -173,14 +173,14 @@ void CAPRSReader::formatGPS(unsigned char *buffer, int latitude, int longitude)
 	*(buffer + 19U) = crc;
 }
 
-bool CAPRSReader::load_call() 
+bool CAPRSReader::load_call()
 {
 	struct timeval timeinfo;
 	unsigned long epoch;
 
 	int longitude = 0;
 	int latitude = 0;
-	
+
 	unsigned char buffer[10000];
 	int nDataLength;
 	std::string website_HTML;
@@ -191,7 +191,7 @@ bool CAPRSReader::load_call()
 	std::string url = "/api/get?name=" + m_cs + "-Y," + m_cs + "-7," + m_cs + "-8," + m_cs + "-9,";
 	url = url + m_cs + "-14," + m_cs + "&what=loc&apikey=" + m_ApiKey + "&format=json";
 	//HTTP GET
-	std::string get_http = "GET " + url + " HTTP/1.1\r\nHost: api.aprs.fi\r\nUser-Agent: YSF2DMR/0.12\r\n\r\n";		
+	std::string get_http = "GET " + url + " HTTP/1.1\r\nHost: api.aprs.fi\r\nUser-Agent: YSF2DMR/0.12\r\n\r\n";
 	CTCPSocket sockfd("api.aprs.fi", 80);
 
 	bool ret = sockfd.open();
@@ -222,7 +222,7 @@ bool CAPRSReader::load_call()
 				longitude = (int)(atof(tmp_str) * 1000);
 				m_lon_table[m_cs] = longitude;
 			}
-			
+
 			if ((latitude != 0) && (longitude != 0))
 				break;
 		}
@@ -273,7 +273,7 @@ bool CAPRSReader::findCall(std::string cs, int *latitude, int *longitude)
 			return true;
 		else
 			return false;
-	} 
+	}
 
 	if (not_found) {
 		m_new_callsign = true;

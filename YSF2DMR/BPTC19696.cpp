@@ -130,7 +130,7 @@ void CBPTC19696::decodeDeInterleave()
 		m_deInterData[a] = m_rawData[interleaveSequence];
 	}
 }
-	
+
 // Check each row with a Hamming (15,11,3) code and each column with a Hamming (13,9,3) code
 void CBPTC19696::decodeErrorCheck()
 {
@@ -158,7 +158,7 @@ void CBPTC19696::decodeErrorCheck()
 				fixing = true;
 			}
 		}
-		
+
 		// Run through each of the 9 rows containing data
 		for (unsigned int r = 0U; r < 9U; r++) {
 			unsigned int pos = (r * 15U) + 1U;
@@ -268,13 +268,13 @@ void CBPTC19696::encodeExtractData(const unsigned char* in) const
 // Check each row with a Hamming (15,11,3) code and each column with a Hamming (13,9,3) code
 void CBPTC19696::encodeErrorCheck()
 {
-	
+
 	// Run through each of the 9 rows containing data
 	for (unsigned int r = 0U; r < 9U; r++) {
 		unsigned int pos = (r * 15U) + 1U;
 		CHamming::encode15113_2(m_deInterData + pos);
 	}
-	
+
 	// Run through each of the 15 columns
 	bool col[13U];
 	for (unsigned int c = 0U; c < 15U; c++) {

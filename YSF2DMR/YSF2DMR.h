@@ -74,7 +74,7 @@ public:
 	int run();
 
 private:
-	CWiresXStorage*  m_storage;	
+	CWiresXStorage*  m_storage;
 	std::string      m_callsign;
 	std::string      m_suffix;
 	CConf            m_conf;

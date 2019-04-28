@@ -60,7 +60,7 @@ public:
 
 	void close();
 
-private: 
+private:
 	in_addr         m_address;
 	unsigned int    m_port;
 	uint8_t*        m_id;

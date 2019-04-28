@@ -207,7 +207,7 @@ bool CTCPSocket::writeLine(const std::string& line)
 	std::string lineCopy(line);
 	if (lineCopy.length() > 0 && lineCopy.at(lineCopy.length() - 1) != '\n')
 		lineCopy.append("\n");
-	
+
 	//stupidly write one char after the other
 	size_t len = lineCopy.length();
 	bool result = true;

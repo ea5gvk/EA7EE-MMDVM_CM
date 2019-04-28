@@ -33,7 +33,7 @@ public:
 	virtual ~CAPRSReader();
 
 	virtual void entry();
-	
+
 	bool findCall(std::string cs, int *latitude, int *longitude);
     void formatGPS(unsigned char *buffer, int latitude, int longitude);
 	void stop();

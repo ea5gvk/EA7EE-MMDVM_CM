@@ -95,7 +95,7 @@ int main(int argc, char** argv)
 
 #if !defined(_WIN32) && !defined(_WIN64)
 	// Capture SIGTERM to finish gracelessly
-	if (signal(SIGTERM, sig_handler) == SIG_ERR) 
+	if (signal(SIGTERM, sig_handler) == SIG_ERR)
 		::fprintf(stdout, "Can't catch SIGTERM\n");
 #endif
 
@@ -228,7 +228,7 @@ int CYSF2DMR::run()
 				return -1;
 			}
 
-			// Double check it worked (AKA Paranoia) 
+			// Double check it worked (AKA Paranoia)
 			if (setuid(0) != -1) {
 				::fprintf(stderr, "It's possible to regain root - something is wrong!, exiting\n");
 				return -1;
@@ -309,7 +309,7 @@ int CYSF2DMR::run()
 		::LogFinalise();
 		return 1;
 	}
-	
+
 	std::string lookupFile  = m_conf.getDMRIdLookupFile();
 
 	m_lookup = new CDMRLookup(lookupFile, reloadTime);
@@ -327,7 +327,7 @@ int CYSF2DMR::run()
 	// CWiresX Control Object
 	if (m_enableWiresX) {
 		bool makeUpper = m_conf.getWiresXMakeUpper();
-		m_storage = new CWiresXStorage;				
+		m_storage = new CWiresXStorage;
 		m_wiresX = new CWiresX(m_storage, m_callsign, m_suffix, m_ysfNetwork, m_TGList, makeUpper, tglist_reload);
 		m_dtmf = new CDTMF;
 
@@ -346,7 +346,7 @@ int CYSF2DMR::run()
 		createGPS();
 		m_APRS = new CAPRSReader(m_conf.getAPRSAPIKey(), m_conf.getAPRSRefresh());
 	}
-	
+
 	CStopWatch TGChange;
 	CStopWatch stopWatch;
 	CStopWatch ysfWatch;
@@ -354,7 +354,7 @@ int CYSF2DMR::run()
 	CStopWatch bea_voice_Watch;
 	CStopWatch beacon_Watch;
 	CStopWatch timeout_Watch;
-	CStopWatch news_Watch;	
+	CStopWatch news_Watch;
 	stopWatch.start();
 	ysfWatch.start();
 	dmrWatch.start();
@@ -362,7 +362,7 @@ int CYSF2DMR::run()
 	ysfWatchdog.stop();
 	beacon_Watch.start();
 	timeout_Watch.start();
-	news_Watch.start();	
+	news_Watch.start();
 
 	unsigned char ysf_cnt = 0;
 	unsigned char dmr_cnt = 0;
@@ -388,36 +388,36 @@ int CYSF2DMR::run()
     	bool first_time = true;
 	bool first_time_b = true;
 	bool sending_picture = false;
-	std::string news_file_name;	
+	std::string news_file_name;
 
 	for (; end == 0;) {
 		unsigned char buffer[2000U];
 
 		CDMRData tx_dmrdata;
 		unsigned int ms = stopWatch.elapsed();
-		
+
 		if (sending_picture && (m_wiresX->EndPicture() || (news_Watch.elapsed()> (10*TIME_MIN)))) {
 				m_dmrNetwork->enable(true);
-				LogMessage("Enabling DRM Interface.");				
+				LogMessage("Enabling DRM Interface.");
 				sending_picture = false;
-				m_saveAMBE=0;				
-		}		
+				m_saveAMBE=0;
+		}
 
 		// TG Connection safe process at init
 		// To unlink old dynamic TG
 		if (first_time && m_dmrNetwork->isConnected()) {
 			if (!m_tgConnected){
 				if (m_srcHS>9999999U) m_srcid = m_srcHS / 100U;
-				else m_srcid=m_srcHS;	
+				else m_srcid=m_srcHS;
 				if (enableUnlink) {
 					SendDummyDMR(m_srcid, m_idUnlink, m_flcoUnlink);
 					m_ptt_dstid=m_dstid;
 					unlinkReceived = false;
 					TG_connect_state = WAITING_UNLINK;
 					m_tgConnected = true;
-					TGChange.start();					
+					TGChange.start();
 				} else {
-					SendDummyDMR(m_srcid, m_dstid, m_dmrflco);				
+					SendDummyDMR(m_srcid, m_dstid, m_dmrflco);
 				}
 				m_tgConnected = true;
 				LogMessage("Initial linking to TG %d.", m_dstid);
@@ -441,7 +441,7 @@ int CYSF2DMR::run()
 			beacon_status = BE_INIT;
 			bea_voice_Watch.start();
 			beacon_Watch.start();
-			first_time_b = false;			
+			first_time_b = false;
 		}
 
 		// If timeout pass go change TG to Default TG
@@ -494,7 +494,7 @@ int CYSF2DMR::run()
 						not_busy=1;
 					}
 					break;
-				default: 
+				default:
 					break;
 			}
 
@@ -514,9 +514,9 @@ int CYSF2DMR::run()
 				unsigned char dt = fich.getDT();
 				unsigned char fn = fich.getFN();
 				unsigned char ft = fich.getFT();
-				unsigned char bn = fich.getBN();				
-				unsigned char bt = fich.getBT();				
-				
+				unsigned char bn = fich.getBN();
+				unsigned char bt = fich.getBT();
+
 				if (m_wiresX != NULL) {
 					WX_STATUS status = m_wiresX->process(buffer + 35U, buffer + 14U, fi, dt, fn, ft, bn, bt);
 					m_ysfSrc = getSrcYSF(buffer);
@@ -528,7 +528,7 @@ int CYSF2DMR::run()
 							LogMessage("Disabling DRM Interface.");
 							m_dmrNetwork->enable(false);
 							sending_picture = true;
-						    break;							
+						    break;
 						case WXS_CONNECT:
 							not_busy=0;
 							m_srcid = findYSFID(m_ysfSrc, false);
@@ -544,14 +544,14 @@ int CYSF2DMR::run()
 									m_dmrflco = FLCO_GROUP;
 									LogMessage("Connect to TG %d has been requested by %s", m_dstid, m_ysfSrc.c_str());
 									break;
-							
+
 								case 1:
 									m_ptt_pc = true;
 									m_dstid = 9U;
 									m_dmrflco = FLCO_GROUP;
 									LogMessage("Connect to REF %d has been requested by %s", m_ptt_dstid, m_ysfSrc.c_str());
 									break;
-								
+
 								case 2:
 									m_ptt_dstid = 0;
 									m_ptt_pc = true;
@@ -559,7 +559,7 @@ int CYSF2DMR::run()
 									m_dmrflco = FLCO_USER_USER;
 									LogMessage("Connect to %d has been requested by %s", m_dstid, m_ysfSrc.c_str());
 									break;
-							
+
 								default:
 									m_ptt_pc = false;
 									m_dstid = m_wiresX->getFullDstID();
@@ -576,7 +576,7 @@ int CYSF2DMR::run()
 
 								unlinkReceived = false;
 								TG_connect_state = WAITING_UNLINK;
-							} else 
+							} else
 								TG_connect_state = SEND_REPLY;
 
 							TGChange.start();
@@ -628,14 +628,14 @@ int CYSF2DMR::run()
 									m_dmrflco = FLCO_GROUP;
 									LogMessage("Connect to TG %d has been requested by %s", m_dstid, m_ysfSrc.c_str());
 									break;
-							
+
 								case 1:
 									m_ptt_pc = true;
 									m_dstid = 9U;
 									m_dmrflco = FLCO_GROUP;
 									LogMessage("Connect to REF %d has been requested by %s", m_ptt_dstid, m_ysfSrc.c_str());
 									break;
-								
+
 								case 2:
 									m_ptt_dstid = 0;
 									m_ptt_pc = true;
@@ -643,7 +643,7 @@ int CYSF2DMR::run()
 									m_dmrflco = FLCO_USER_USER;
 									LogMessage("Connect to %d has been requested by %s", m_dstid, m_ysfSrc.c_str());
 									break;
-							
+
 								default:
 									m_ptt_pc = false;
 									m_dstid = m_wiresX->getFullDstID();
@@ -659,7 +659,7 @@ int CYSF2DMR::run()
 								LogMessage("Sending DMR Disconnect: Src: %s Dst: %s%d", m_ysfSrc.c_str(), m_flcoUnlink == FLCO_GROUP ? "TG " : "", m_idUnlink);
 
 								SendDummyDMR(m_srcid, m_idUnlink, m_flcoUnlink);
-							
+
 								unlinkReceived = false;
 								TG_connect_state = WAITING_UNLINK;
 							} else
@@ -710,9 +710,9 @@ int CYSF2DMR::run()
 							std::string ysfSrc = ysfPayload.getSource();
 							std::string ysfDst = ysfPayload.getDest();
 							LogMessage("Received YSF Header: Src: %s Dst: %s", ysfSrc.c_str(), ysfDst.c_str());
-							
+
 							m_dmrNetwork->reset(2U);	// OE1KBC fix
-							
+
 							m_srcid = findYSFID(ysfSrc, true);
 							m_conv.putYSFHeader();
 							m_ysfFrames = 0U;
@@ -739,7 +739,7 @@ int CYSF2DMR::run()
 
 				if (m_gps != NULL)
 					m_gps->data(buffer + 14U, buffer + 35U, fi, dt, fn, ft, m_dstid);
-				
+
 			}
 
 			if ((buffer[34U] & 0x01U) == 0x01U) {
@@ -828,13 +828,13 @@ int CYSF2DMR::run()
 				slotType.setColorCode(m_colorcode);
 				slotType.setDataType(DT_VOICE_LC_HEADER);
 				slotType.getData(m_dmrFrame);
-	
+
 				// Full LC
 				CDMRLC dmrLC = CDMRLC(m_dmrflco, m_srcid, m_dstid);
 				CDMRFullLC fullLC;
 				fullLC.encode(dmrLC, m_dmrFrame, DT_VOICE_LC_HEADER);
 				m_EmbeddedLC.setLC(dmrLC);
-				
+
 				rx_dmrdata.setData(m_dmrFrame);
 				//CUtils::dump(1U, "DMR data:", m_dmrFrame, 33U);
 
@@ -851,7 +851,7 @@ int CYSF2DMR::run()
 				CDMRData rx_dmrdata;
 				unsigned int n_dmr = (dmr_cnt - 3U) % 6U;
 				unsigned int fill = (6U - n_dmr);
-				
+
 				if (n_dmr) {
 					for (unsigned int i = 0U; i < fill; i++) {
 
@@ -879,7 +879,7 @@ int CYSF2DMR::run()
 						emb.getData(m_dmrFrame);
 
 						rx_dmrdata.setData(m_dmrFrame);
-				
+
 						//CUtils::dump(1U, "DMR data:", m_dmrFrame, 33U);
 						m_dmrNetwork->write(rx_dmrdata);
 
@@ -906,12 +906,12 @@ int CYSF2DMR::run()
 				slotType.setColorCode(m_colorcode);
 				slotType.setDataType(DT_TERMINATOR_WITH_LC);
 				slotType.getData(m_dmrFrame);
-	
+
 				// Full LC
 				CDMRLC dmrLC = CDMRLC(m_dmrflco, m_srcid, m_dstid);
 				CDMRFullLC fullLC;
 				fullLC.encode(dmrLC, m_dmrFrame, DT_TERMINATOR_WITH_LC);
-				
+
 				rx_dmrdata.setData(m_dmrFrame);
 				//CUtils::dump(1U, "DMR data:", m_dmrFrame, 33U);
 				m_dmrNetwork->write(rx_dmrdata);
@@ -931,7 +931,7 @@ int CYSF2DMR::run()
 				rx_dmrdata.setSeqNo(dmr_cnt);
 				rx_dmrdata.setBER(0U);
 				rx_dmrdata.setRSSI(0U);
-			
+
 				if (!n_dmr) {
 					rx_dmrdata.setDataType(DT_VOICE_SYNC);
 					// Add sync
@@ -952,7 +952,7 @@ int CYSF2DMR::run()
 				}
 
 				rx_dmrdata.setData(m_dmrFrame);
-				
+
 				//CUtils::dump(1U, "DMR data:", m_dmrFrame, 33U);
 				m_dmrNetwork->write(rx_dmrdata);
 
@@ -965,7 +965,7 @@ int CYSF2DMR::run()
 			if (beacon_status==BE_DATA) beacon_status=BE_EOT;
 			unsigned int SrcId = tx_dmrdata.getSrcId();
 			unsigned int DstId = tx_dmrdata.getDstId();
-			
+
 			FLCO netflco = tx_dmrdata.getFLCO();
 			unsigned char DataType = tx_dmrdata.getDataType();
 
@@ -995,7 +995,7 @@ int CYSF2DMR::run()
 				}
 
 				if((DataType == DT_VOICE_LC_HEADER) && (DataType != m_dmrLastDT)) {
-					
+
 					// DT1 & DT2 without GPS info
 					::memcpy(gps_buffer, dt1_temp, 10U);
 					::memcpy(gps_buffer + 10U, dt2_temp, 10U);
@@ -1029,7 +1029,7 @@ int CYSF2DMR::run()
 
 					m_netSrc.resize(YSF_CALLSIGN_LENGTH, ' ');
 					m_netDst.resize(YSF_CALLSIGN_LENGTH, ' ');
-					
+
 					m_dmrFrames = 0U;
 					m_firstSync = false;
 				}
@@ -1096,10 +1096,10 @@ int CYSF2DMR::run()
 					m_dmrinfo = false;
 				}
 			}
-			
+
 			m_dmrLastDT = DataType;
 		}
-		
+
 		if (ysfWatch.elapsed() > YSF_FRAME_PER) {
 			unsigned int ysfFrameType = m_conv.getYSF(m_ysfFrame + 35U);
 
@@ -1146,7 +1146,7 @@ int CYSF2DMR::run()
 				payload.writeHeader(m_ysfFrame + 35U, csd1, csd2);
 
 				m_ysfNetwork->write(m_ysfFrame);
-				
+
 				ysf_cnt++;
 				ysfWatch.start();
 			}
@@ -1224,7 +1224,7 @@ int CYSF2DMR::run()
 					default:
 						ysfPayload.writeVDMode2Data(m_ysfFrame + 35U, (const unsigned char*)"          ");
 				}
-				
+
 				// Set the FICH
 				fich.setFI(YSF_FI_COMMUNICATIONS);
 				fich.setCS(2U);
@@ -1250,7 +1250,7 @@ int CYSF2DMR::run()
 
 				// Send data to MMDVMHost
 				m_ysfNetwork->write(m_ysfFrame);
-				
+
 				ysf_cnt++;
 				ysfWatch.start();
 			}
@@ -1290,23 +1290,23 @@ int CYSF2DMR::run()
 
 	m_ysfNetwork->close();
 	m_dmrNetwork->close();
-	
+
 	if (m_APRS != NULL) {
 		m_APRS->stop();
 		delete m_APRS;
 	}
-	
+
 	if (m_gps != NULL) {
 		m_gps->close();
 		delete m_gps;
 	}
-	
+
 	delete m_dmrNetwork;
 	delete m_ysfNetwork;
 
 	if (m_wiresX != NULL) {
 		delete m_wiresX;
-		delete m_storage;		
+		delete m_storage;
 		delete m_dtmf;
 	}
 
@@ -1431,7 +1431,7 @@ unsigned int CYSF2DMR::findYSFID(std::string cs, bool showdst)
 	int mid1 = cs.find_last_of('-');
 	int mid2 = cs.find_last_of('/');
 	int last = cs.find_last_not_of(' ');
-	
+
 	if (mid1 == -1 && mid2 == -1 && first == -1 && last == -1)
 		cstrim = "N0CALL";
 	else if (mid1 == -1 && mid2 == -1)
@@ -1467,10 +1467,10 @@ std::string CYSF2DMR::getSrcYSF(const unsigned char* buffer)
 
 	::memcpy(temp, buffer + 14U, YSF_CALLSIGN_LENGTH);
 	temp[YSF_CALLSIGN_LENGTH] = 0U;
-	
+
 	std::string trimmed = reinterpret_cast<char const*>(temp);
 	trimmed.erase(std::find_if(trimmed.rbegin(), trimmed.rend(), std::not1(std::ptr_fun<int, int>(std::isspace))).base(), trimmed.end());
-	
+
 	return trimmed;
 }
 
@@ -1516,7 +1516,7 @@ bool CYSF2DMR::createDMRNetwork()
 		CReflector* reflector = m_xlxReflectors->find(m_xlxrefl);
 		if (reflector == NULL)
 			return false;
-		
+
 		address = reflector->m_address;
 	}
 
@@ -1534,7 +1534,7 @@ bool CYSF2DMR::createDMRNetwork()
 
 	m_srcid = m_defsrcid;
 	bool enableUnlink = m_conf.getDMRNetworkEnableUnlink();
-	
+
 	LogMessage("DMR Network Parameters");
 	LogMessage("    ID: %u", m_srcHS);
 	LogMessage("    Default SrcID: %u", m_defsrcid);

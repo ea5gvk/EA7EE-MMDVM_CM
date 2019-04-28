@@ -120,7 +120,7 @@ B_STATUS CDelayBuffer::getData(unsigned char* data, unsigned int& length)
 			// We only need to copy silence AMBE data, don't care about LC data for next YSF conversion stage
 			::memcpy(data + 20U, DMR_SILENCE_DATA, 33U);
 			data[53U] = 0U;
-			data[54U] = 0U; 
+			data[54U] = 0U;
 		}
 
 		m_lastDataValid = false;

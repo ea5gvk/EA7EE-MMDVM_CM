@@ -155,7 +155,7 @@ void CGPS::data(const unsigned char* source, const unsigned char* data, unsigned
 			valid = payload.readDataFRModeData2(data, m_buffer + (fn - 1U) * 20U + 20U);
 			if (!valid) return;
 		}
-		
+
 		if (fn == ft) {
 			bool valid = false;
 			// Find the end marker
@@ -181,7 +181,7 @@ void CGPS::data(const unsigned char* source, const unsigned char* data, unsigned
 
 				m_sent = true;
 			}
-		}		
+		}
 	}
 }
 
@@ -306,7 +306,7 @@ void CGPS::transmitGPS(const unsigned char* source)
 		break;
 	case 0x27U:
 		::strcpy(radio, "FT-991");
-		break;		
+		break;
 	case 0x28U:
 		::strcpy(radio, "FT-2D");
 		break;

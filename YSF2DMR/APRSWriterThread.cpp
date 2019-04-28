@@ -137,7 +137,7 @@ void CAPRSWriterThread::entry()
 
 					if(length > 0 && line.at(0U) != '#'//check if we have something and if that something is an APRS frame
 					    && m_APRSReadCallback != NULL)//do we have someone wanting an APRS Frame?
-					{	
+					{
 						//wxLogMessage(wxT("Received APRS Frame : ") + line);
 						m_APRSReadCallback(std::string(line));
 					}
@@ -221,7 +221,7 @@ bool CAPRSWriterThread::connect()
 
 	char connectString[200U];
 	::sprintf(connectString, "user %s pass %s vers %s%s\n", m_username.c_str(), m_password.c_str(), (m_clientName.length() ? m_clientName : "YSF2DMR").c_str(), filter.c_str());
-	
+
 	ret = m_socket.writeLine(std::string(connectString));
 	if (!ret) {
 		m_socket.close();
