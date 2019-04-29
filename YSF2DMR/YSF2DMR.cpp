@@ -397,10 +397,10 @@ int CYSF2DMR::run()
 		unsigned int ms = stopWatch.elapsed();
 
 		if (sending_picture && (m_wiresX->EndPicture() || (news_Watch.elapsed()> (10*TIME_MIN)))) {
+				not_busy=1;
 				m_dmrNetwork->enable(true);
 				LogMessage("Enabling DRM Interface.");
 				sending_picture = false;
-				m_saveAMBE=0;
 		}
 
 		// TG Connection safe process at init
@@ -524,6 +524,7 @@ int CYSF2DMR::run()
 					switch (status) {
 						case WXS_PICTURE:
 						case WXS_GET_MESSAGE:
+							not_busy=0;							
 							news_Watch.start();
 							LogMessage("Disabling DRM Interface.");
 							m_dmrNetwork->enable(false);
