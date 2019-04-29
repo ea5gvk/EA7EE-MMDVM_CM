@@ -46,6 +46,7 @@ mount -o remount,rw /
 sed -i "/kernel/c kernel = $_KernelVer" /etc/pistar-release
 sed -i "/MMDVMHost/c MMDVMHost = $_MMDVMHostVer" /etc/pistar-release
 cp -R /var/www/dashboard/news /tmp
+chown -R mmdvm.mmdvm /tmp/news
 sleep 30
 updateDMRIDs.sh
 mount -o remount,ro /
