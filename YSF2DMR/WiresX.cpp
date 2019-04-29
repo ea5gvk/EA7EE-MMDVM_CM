@@ -136,7 +136,7 @@ m_number(0U)
 	m_csd3   = new unsigned char[20U];
 
 	m_picture_state = WXPIC_NONE;
-	m_end_picture=false;
+	m_end_picture=true;
 
 	// Load file with TG List
 	read();
@@ -425,6 +425,7 @@ WX_STATUS CWiresX::process(const unsigned char* data, const unsigned char* sourc
 			last_ref=0;
 			return processUploadPicture(source, m_command + 5U,0);
 		} else if (::memcmp(m_command + 1U, PICT_DATA, 3U) == 0) {
+			if (m_end_picture) return WXS_NONE;
 			act_ref=m_command[7U];
 			if ((last_ref!=0) && ((last_ref+1)!=act_ref)) {
 				LogMessage("Out of order picture block.");
@@ -669,13 +670,11 @@ void CWiresX::processDataPicture(const unsigned char* data, unsigned int size)
 {
 	m_timeout.start();
 	m_storage->AddPictureData(data+5U,size,m_news_source);
-	//if (size<1027U) m_end_picture = true;
 }
 
 void CWiresX::processPictureACK(const unsigned char* source, const unsigned char* data)
 {
 	m_status = WXSI_UPLOAD_PIC;
-	m_end_picture=true;
 	m_timeout.start();
 	m_timer.start();
 	m_timeout.stop();
@@ -1599,6 +1598,7 @@ void CWiresX::sendUploadReply(bool pict)
 		data[i + 1U] = UP_ACK[i];
 
 	if (pict) {
+		m_end_picture=true;		
 		m_storage->PictureEnd(error_upload);
 		if (error_upload) data[2U]=0x31;
 	}
