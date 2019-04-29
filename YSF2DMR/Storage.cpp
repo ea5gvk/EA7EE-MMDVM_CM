@@ -218,7 +218,7 @@ void CWiresXStorage::AddPictureData(const unsigned char *data, unsigned int size
 			fwrite(data+251U,1,size-251U,m_picture_file);		
 		} 	else fwrite(data,1,size,m_picture_file);
 	}
-	if (size<1027U) {
+	if ((size<1027U) && m_picture_file) {
 		picture_final_size=ftell(m_picture_file);
 		fclose(m_picture_file);
 		m_picture_file = NULL;		
