@@ -36,6 +36,7 @@ public:
 	void putDMRHeader();
 	void putDMREOT();
 
+	void putYSF_Mode1(unsigned char* bytes, FILE *file);
 	void putYSF(unsigned char* bytes, FILE *file);
 	void putDummyYSF();
 	void putYSFHeader();
