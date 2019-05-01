@@ -28,6 +28,7 @@ install:
 		dos2unix ./contrib/*
 		cp ./contrib/tg_generate.py /usr/local/bin
 		cp ./contrib/config_clean.zip /usr/local/bin
+		cp ./contrib/functions.php /var/www/dashboard/mmdvmhost		
 		cp ./contrib/configure.php /var/www/dashboard/admin
 		cp ./contrib/spanish_es.php /var/www/dashboard/lang
 		cp ./contrib/TGList.txt /usr/local/etc
