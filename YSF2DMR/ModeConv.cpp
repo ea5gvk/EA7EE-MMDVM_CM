@@ -695,6 +695,67 @@ void CModeConv::putAMBE2YSF(unsigned int a, unsigned int b, unsigned int dat_c)
 	m_ysfN += 1U;
 }
 
+void CModeConv::putYSF_Mode1(unsigned char* data, FILE *file) {
+	assert(data != NULL);
+
+	data += YSF_SYNC_LENGTH_BYTES + YSF_FICH_LENGTH_BYTES;
+
+	unsigned int offset = 72U; // DCH(0)
+    unsigned char buf[40];
+	unsigned char pos=0;
+
+	// We have a total of 5 VCH sections, iterate through each
+	for (unsigned int j = 0U; j < 5U; j++, offset += 72U) {
+
+		unsigned int a = 0U;
+		unsigned int MASK = 0x800000U;
+		for (unsigned int i = 0U; i < 24U; i++, MASK >>= 1) {
+			unsigned int aPos = DMR_A_TABLE[i];
+			if (READ_BIT(data, aPos + offset))
+				a |= MASK;
+		}
+
+		unsigned int b = 0U;
+		MASK = 0x400000U;
+		for (unsigned int i = 0U; i < 23U; i++, MASK >>= 1) {
+			unsigned int bPos = DMR_B_TABLE[i];
+			if (READ_BIT(data, bPos + offset))
+				b |= MASK;
+		}
+
+		unsigned int dat_c = 0U;
+		MASK = 0x1000000U;
+		for (unsigned int i = 0U; i < 25U; i++, MASK >>= 1) {
+			unsigned int cPos = DMR_C_TABLE[i];
+			if (READ_BIT(data, cPos + offset))
+				dat_c |= MASK;
+		}
+		
+		unsigned int dat_a = CGolay24128::decode24128(a);
+		// The PRNG
+		unsigned int p = PRNG_TABLE[dat_a] >> 1;;
+		b ^= p;
+		unsigned int dat_b = CGolay24128::decode23127(b<<1);
+
+		
+		buf[pos]=0U;
+		buf[pos+1]=(unsigned char)(dat_a>>4);
+		unsigned char tmp=(unsigned char)((dat_a<<4)&0xF0);
+		tmp=tmp|(unsigned char)((dat_b>>8)&0x0F);
+        buf[pos+2]=tmp;
+        buf[pos+3]=(unsigned char)(dat_b&0xFF);
+        buf[pos+4]=(unsigned char)((dat_c&0x1FE0000)>>17);
+        buf[pos+5]=(unsigned char)((dat_c&0x1FE00)>>9);
+        buf[pos+6]=(unsigned char)((dat_c&0x1FE)>>1);
+		buf[pos+7]=(unsigned char) (dat_c&0x01);
+		pos+=8;
+	}
+    if (file) {
+		fwrite(buf,40U,1U,file);
+		//CUtils::dump(1U, "VCH V/D type 2:", buf, 40U);
+	}	
+}
+
 void CModeConv::putYSF(unsigned char* data, FILE *file)
 {
 	assert(data != NULL);
