@@ -705,7 +705,7 @@ void CModeConv::putYSF_Mode1(unsigned char* data, FILE *file) {
 	unsigned char pos=0;
 
 	// We have a total of 5 VCH sections, iterate through each
-	for (unsigned int j = 0U; j < 5U; j++, offset += 72U) {
+	for (unsigned int j = 0U; j < 5U; j++, offset += 144U) {
 
 		unsigned int a = 0U;
 		unsigned int MASK = 0x800000U;
@@ -733,38 +733,36 @@ void CModeConv::putYSF_Mode1(unsigned char* data, FILE *file) {
 		
 		unsigned int dat_a = CGolay24128::decode24128(a);
 		// The PRNG
-		unsigned int p = PRNG_TABLE[dat_a] >> 1;;
-		b ^= p;
-		unsigned int dat_b = CGolay24128::decode23127(b<<1);
-
+		b ^=  PRNG_TABLE[dat_a] >> 1;;
+		unsigned int dat_b = CGolay24128::decode23127(b);
 		
 		buf[pos]=0U;
 		buf[pos+1]=(unsigned char)(dat_a>>4);
 		unsigned char tmp=(unsigned char)((dat_a<<4)&0xF0);
 		tmp=tmp|(unsigned char)((dat_b>>8)&0x0F);
-        buf[pos+2]=tmp;
-        buf[pos+3]=(unsigned char)(dat_b&0xFF);
-        buf[pos+4]=(unsigned char)((dat_c&0x1FE0000)>>17);
-        buf[pos+5]=(unsigned char)((dat_c&0x1FE00)>>9);
-        buf[pos+6]=(unsigned char)((dat_c&0x1FE)>>1);
+		buf[pos+2]=tmp;
+		buf[pos+3]=(unsigned char)(dat_b&0xFF);
+		buf[pos+4]=(unsigned char)((dat_c&0x1FE0000)>>17);
+		buf[pos+5]=(unsigned char)((dat_c&0x1FE00)>>9);
+		buf[pos+6]=(unsigned char)((dat_c&0x1FE)>>1);
 		buf[pos+7]=(unsigned char) (dat_c&0x01);
 		pos+=8;
 	}
-    if (file) {
+    	if (file) {
 		fwrite(buf,40U,1U,file);
 		//CUtils::dump(1U, "VCH V/D type 2:", buf, 40U);
 	}	
 }
 
-void CModeConv::putYSF(unsigned char* data, FILE *file)
+void CModeConv::putYSF(unsigned char* data)
 {
 	assert(data != NULL);
 
 	data += YSF_SYNC_LENGTH_BYTES + YSF_FICH_LENGTH_BYTES;
 
 	unsigned int offset = 40U; // DCH(0)
-    unsigned char buf[40];
-	unsigned char pos=0;
+        //unsigned char buf[40];
+	//unsigned char pos=0;
 
 	// We have a total of 5 VCH sections, iterate through each
 	for (unsigned int j = 0U; j < 5U; j++, offset += 144U) {
@@ -809,24 +807,24 @@ void CModeConv::putYSF(unsigned char* data, FILE *file)
 				dat_c |= 0x01U;;
 		}
 
-		buf[pos]=0U;
+/*		buf[pos]=0U;
 		buf[pos+1]=(unsigned char)(dat_a>>4);
 		unsigned char tmp=(unsigned char)((dat_a<<4)&0xF0);
 		tmp=tmp|(unsigned char)((dat_b>>8)&0x0F);
-        buf[pos+2]=tmp;
-        buf[pos+3]=(unsigned char)(dat_b&0xFF);
-        buf[pos+4]=(unsigned char)((dat_c&0x1FE0000)>>17);
-        buf[pos+5]=(unsigned char)((dat_c&0x1FE00)>>9);
-        buf[pos+6]=(unsigned char)((dat_c&0x1FE)>>1);
+		buf[pos+2]=tmp;
+		buf[pos+3]=(unsigned char)(dat_b&0xFF);
+		buf[pos+4]=(unsigned char)((dat_c&0x1FE0000)>>17);
+		buf[pos+5]=(unsigned char)((dat_c&0x1FE00)>>9);
+		buf[pos+6]=(unsigned char)((dat_c&0x1FE)>>1);
 		buf[pos+7]=(unsigned char) (dat_c&0x01);
-		pos+=8;
+		pos+=8; */
 
 		putAMBE2DMR(dat_a, dat_b, dat_c);
 	}
-    if (file) {
+ /*   	if (file) {
 		fwrite(buf,40U,1U,file);
 		//CUtils::dump(1U, "VCH V/D type 2:", buf, 40U);
-	}
+	} */
 }
 
 void CModeConv::putAMBE2DMR(unsigned int dat_a, unsigned int dat_b, unsigned int dat_c)
