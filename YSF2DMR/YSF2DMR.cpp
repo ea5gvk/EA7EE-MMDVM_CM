@@ -733,7 +733,7 @@ int CYSF2DMR::run()
 						beacon_Watch.start();
 						not_busy=0;
 						ysfWatchdog.start();
-						m_conv.putYSF(buffer + 35U,file);
+						m_conv.putYSF(buffer + 35U);
 						m_ysfFrames++;
 					}
 				}
