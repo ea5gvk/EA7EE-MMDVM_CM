@@ -125,9 +125,9 @@ bool CYSFControl::writeModem(unsigned char *data, unsigned int len)
 	}
 
 	if (type == TAG_LOST && m_rfState == RS_RF_REJECTED) {
-		m_rfPayload.reset();
-		m_rfSource = NULL;
-		m_rfDest   = NULL;
+		//m_rfPayload.reset();
+		//m_rfSource = NULL;
+		//m_rfDest   = NULL;
 		m_rfState  = RS_RF_LISTENING;
 		return false;
 	}
@@ -218,6 +218,11 @@ bool CYSFControl::processVWData(bool valid, unsigned char *data)
 	unsigned char fi = m_lastFICH.getFI();
 	if (valid && fi == YSF_FI_HEADER) {
 		if (m_rfState == RS_RF_LISTENING) {
+			m_rfPayload.reset();
+			
+			// These variables are free'd by YSFPayload
+			m_rfSource = NULL;
+			m_rfDest = NULL;			
 			bool valid = m_rfPayload.processHeaderData(data + 2U);
 			if (!valid)
 				return false;
@@ -290,9 +295,9 @@ bool CYSFControl::processVWData(bool valid, unsigned char *data)
 		}
 	} else if (valid && fi == YSF_FI_TERMINATOR) {
 		if (m_rfState == RS_RF_REJECTED) {
-			m_rfPayload.reset();
-			m_rfSource = NULL;
-			m_rfDest   = NULL;
+			//m_rfPayload.reset();
+			//m_rfSource = NULL;
+			//m_rfDest   = NULL;
 			m_rfState  = RS_RF_LISTENING;
 		} else if (m_rfState == RS_RF_AUDIO) {
 			m_rfPayload.processHeaderData(data + 2U);
@@ -395,6 +400,10 @@ bool CYSFControl::processDNData(bool valid, unsigned char *data)
 	unsigned char fi = m_lastFICH.getFI();
 	if (valid && fi == YSF_FI_HEADER) {
 		if (m_rfState == RS_RF_LISTENING) {
+			m_rfPayload.reset();
+			// These variables are free'd by YSFPayload
+			m_rfSource = NULL;
+			m_rfDest = NULL;			
 			bool valid = m_rfPayload.processHeaderData(data + 2U);
 			if (!valid)
 				return false;
@@ -467,9 +476,9 @@ bool CYSFControl::processDNData(bool valid, unsigned char *data)
 		}
 	} else if (valid && fi == YSF_FI_TERMINATOR) {
 		if (m_rfState == RS_RF_REJECTED) {
-			m_rfPayload.reset();
-			m_rfSource = NULL;
-			m_rfDest   = NULL;
+			//m_rfPayload.reset();
+			//m_rfSource = NULL;
+			//m_rfDest   = NULL;
 			m_rfState  = RS_RF_LISTENING;
 		} else if (m_rfState == RS_RF_AUDIO) {
 			m_rfPayload.processHeaderData(data + 2U);
@@ -722,6 +731,10 @@ bool CYSFControl::processFRData(bool valid, unsigned char *data)
 	unsigned char fi = m_lastFICH.getFI();
 	if (valid && fi == YSF_FI_HEADER) {
 		if (m_rfState == RS_RF_LISTENING) {
+			m_rfPayload.reset();
+			// These variables are free'd by YSFPayload
+			m_rfSource = NULL;
+			m_rfDest = NULL;			
 			valid = m_rfPayload.processHeaderData(data + 2U);
 			if (!valid)
 				return false;
@@ -791,9 +804,9 @@ bool CYSFControl::processFRData(bool valid, unsigned char *data)
 		}
 	} else if (valid && fi == YSF_FI_TERMINATOR) {
 		if (m_rfState == RS_RF_REJECTED) {
-			m_rfPayload.reset();
-			m_rfSource = NULL;
-			m_rfDest   = NULL;
+			//m_rfPayload.reset();
+			//m_rfSource = NULL;
+			//m_rfDest   = NULL;
 			m_rfState  = RS_RF_LISTENING;
 		} else if (m_rfState == RS_RF_DATA) {
 			m_rfPayload.processHeaderData(data + 2U);
@@ -834,47 +847,45 @@ bool CYSFControl::processFRData(bool valid, unsigned char *data)
 			writeEndRF();
 		}
 	} else {
-			if (m_rfState == RS_RF_LISTENING) {	
-				if (m_lastFICH.getFI()==1) {
+		if (m_rfState == RS_RF_LISTENING) {
+			// If during listening we get data we rebuild header and put the data out		
+			if (m_lastFICH.getFI()==1) {
 
-					m_rfSource = m_rfPayload.getSource();
+				m_rfSource = m_rfPayload.getSource();
 
-					if (m_selfOnly) {
-						bool ret = checkCallsign(m_rfSource);
-						if (!ret) {
-							LogMessage("YSF, invalid access attempt from %10.10s", m_rfSource);
-							m_rfState = RS_RF_REJECTED;
-							return false;
-						}
+				if (m_selfOnly) {
+					bool ret = checkCallsign(m_rfSource);
+					if (!ret) {
+						LogMessage("YSF, invalid access attempt from %10.10s", m_rfSource);
+						m_rfState = RS_RF_REJECTED;
+						return false;
 					}
-
-					unsigned char cm = m_lastFICH.getCM();
-					if (cm == YSF_CM_GROUP1 || cm == YSF_CM_GROUP2)
-						m_rfDest = (unsigned char*)"ALL       ";
-					else
-						m_rfDest = m_rfPayload.getDest();
-
-					m_rfFrames = 0U;
-					m_rfState = RS_RF_DATA;
-
-					m_minRSSI = m_rssi;
-					m_maxRSSI = m_rssi;
-					m_aveRSSI = m_rssi;
-					m_rssiCount = 1U;
-		#if defined(DUMP_YSF)
-					openFile();
-		#endif
-
-					m_display->writeFusion((char*)m_rfSource, (char*)m_rfDest, "R", "          ");
-					LogMessage("YSF, received Picture data from %10.10s to %10.10s", m_rfSource, m_rfDest);
-
-					//return true;
 				}
-				
+
+				unsigned char cm = m_lastFICH.getCM();
+				if (cm == YSF_CM_GROUP1 || cm == YSF_CM_GROUP2)
+					m_rfDest = (unsigned char*)"ALL       ";
+				else
+					m_rfDest = m_rfPayload.getDest();
+
+				m_rfFrames = 0U;
+				m_rfState = RS_RF_DATA;
+
+				m_minRSSI = m_rssi;
+				m_maxRSSI = m_rssi;
+				m_aveRSSI = m_rssi;
+				m_rssiCount = 1U;
+	#if defined(DUMP_YSF)
+				openFile();
+	#endif
+
+				m_display->writeFusion((char*)m_rfSource, (char*)m_rfDest, "R", "          ");
+				LogMessage("YSF, received Picture data from %10.10s to %10.10s", m_rfSource, m_rfDest);
+
+				//return true;
 			}
-		
-		
-		
+
+		}
 		
 		if (m_rfState == RS_RF_DATA) {
 			// If valid is false, update the m_lastFICH for this transmission
