@@ -767,6 +767,7 @@ void CWiresX::clock(unsigned int ms)
 			break;
 		case WXSI_NEWS:
 			sendNewsReply();
+			break;
 		case WXSI_ALL:
 			sendAllReply();
 			break;
