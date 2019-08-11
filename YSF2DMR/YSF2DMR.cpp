@@ -262,7 +262,6 @@ int CYSF2DMR::run()
 	m_remoteGateway = m_conf.getRemoteGateway();
 	m_hangTime = m_conf.getHangTime();
 
-	m_saveAMBE		 = m_conf.getSaveAMBE();
 	bool debug               = m_conf.getDMRNetworkDebug();
 	in_addr dstAddress       = CUDPSocket::lookup(m_conf.getDstAddress());
 	unsigned int dstPort     = m_conf.getDstPort();
